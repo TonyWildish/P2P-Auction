@@ -18,3 +18,12 @@ Player _i_'s bid is s_*i* = ( q_*i*, p_*i*), where q_*i* represents the quantity
 Let s = (s_*1*, s_*2*, ..., s_*I*) be the bid profile.
 
 Define s_*-i* to be the bid profile with player *i*'s bid removed.
+
+An **allocation rule** maps **s = (p,q)** to **A(s) = (a(s),c(s))** where **a(s)** is the quantity allocated and **c(s)** is the cost charged for the allocation.
+
+(Note that **c** is the total cost, while **p** is the price per unit)
+
+An allocation is **feasible** if:
+- the sum over bidders of **a_*i*(s)** is less than the total, **_Q_**
+- for all bidders *i*, **a_*i*(s) <= q_*i*
+- for all bidders *i*, **c_*i*(s) <= p_*i* . q_*i* **
