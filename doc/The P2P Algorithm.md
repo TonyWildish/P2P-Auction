@@ -13,4 +13,8 @@ Let **_Q_** represent the resource to be shared, i.e. the network bandwidth.
 
 Let **_I_** be the set of players, \{1,...,*I*\}, participating in the auction.
 
-Player _i_'s bid is s_*i* = ( q_*i*, p_*i*), where q_*i* represents the quantity the player wants (0 <= q_*i* <= **_Q_**) and p_*i* represents the price they are willing to pay ( 0 <= p_*i*).
+Player _i_'s bid is s_*i* = ( q_*i*, p_*i*), where q_*i* represents the quantity the player wants (0 <= q_*i* <= **_Q_**) and p_*i* represents the *unit* price they are willing to pay ( 0 <= p_*i* <= infinity).
+
+Let s = (s_*1*, s_*2*, ..., s_*I*) be the bid profile.
+
+Define s_*-i* to be the bid profile with player *i*'s bid removed.
