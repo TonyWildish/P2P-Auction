@@ -13,4 +13,4 @@ Let **_Q_** represent the resource to be shared, i.e. the network bandwidth.
 
 Let **_I_** be the set of players, \{1,...,*I*\}, participating in the auction.
 
-Player _i_'s bid is s__i_ = ( q__i_, p__i_), where q__i_ represents the quantity the player wants (0 <= q__i_ <= **_Q_**) and p__i_ represents the price they are willing to pay ( 0 <= p__i_).
+Player _i_'s bid is s_*i* = ( q_*i*, p_*i*), where q_*i* represents the quantity the player wants (0 <= q_*i* <= **_Q_**) and p_*i* represents the price they are willing to pay ( 0 <= p_*i*).
