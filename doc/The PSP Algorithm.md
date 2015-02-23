@@ -42,7 +42,7 @@ For **_y_ >= 0**, define:
 
 **Qbar_i(y, s_-i)** = **Q - sum over [k != i, p_k >= y] q_k**
 
-i.e. **Qbar_i(y, s_-i)** is the total resource minus the sum of requested resources for all players *i* who bid less than *y*.
+i.e. **Qbar_i(y, s_-i)** is the total resource minus the sum of requested resources for all players *i* who bid more than *y*.
 
 (N.B. Have to understand the square-bracket notation with the superscript '+')
 
