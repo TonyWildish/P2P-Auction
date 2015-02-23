@@ -1,0 +1,1 @@
+for Markdown preview, CMD-shift-P 'Markdown Preview: in browser'
