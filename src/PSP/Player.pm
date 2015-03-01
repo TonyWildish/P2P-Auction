@@ -1,10 +1,8 @@
-package PSP::Auctioneer;
+package PSP::Player;
 use strict;
 use warnings;
 
 use base 'PSP::Util';
-use PSP::Listener;
-use HTTP::Status qw / RC_OK / ;
 use POE;
 use POE::Queue::Array;
 use JSON::XS;
@@ -34,10 +32,9 @@ sub new {
           Port          => 3141,
           Listening     => 0,
 
-#         Parameters of the auction
-          EqTimeout     => 15,  # How long with no bids before declaring equilibrium?
-          Epsilon       =>  5,  # bid-fee
-          Q             => 100, # How much of whatever I'm selling
+          EqTimeout     => undef,  # How long with no bids before declaring equilibrium?
+          Epsilon       => undef,  # bid-fee
+          Q             => undef, # How much of whatever is being sold
         );
 
   $self = \%params;
@@ -83,6 +80,12 @@ sub PostReadConfig {
     $self->StopListening();
   }
   $self->{CurrentPort} = $self->{Port};
+
+# Cheat by setting these from the config file.
+# Should really ask the auctioneer for them instead...
+  foreach ( qw / EqTimeout Epsilon Q / ) {
+    $self->{$_} = $PSP::Auctioneer{$_};
+  }
   $self->StartListening();
 }
 
@@ -95,48 +98,6 @@ sub StartListening {
   my $self = shift;
   $self->Log("Stub: StartListening on port ",$self->{Port});
   $self->{Listening} = 1;
-  $self->{Listener} = PSP::Listener->new (
-    Port => $self->{Port},
-    # ContentHandler => {
-    #   "/"         => sub { $self->{handleRoot}(@_) },
-    #   "/bid"      => $self->{handleBid},
-    #   "/hello"    => $self->{handleHello},
-    #   "/goodbye"  => $self->{handleGoodbye},
-    # }
-  );
 }
-
-# sub handleRoot {
-#   $DB::single=1;
-#   my ($request, $response) = @_;
-#   $response->code(RC_OK);
-#   $response->push_header("Content-Type", "text/plain");
-#   $response->content("Root handler:\n\n");
-#   return RC_OK;
-# }
-
-# sub handleBid {
-#   my ($request, $response) = @_;
-#   $response->code(RC_OK);
-#   $response->push_header("Content-Type", "text/plain");
-#   $response->content("Bid handler:\n\n");
-#   return RC_OK;
-# }
-
-# sub handleHello {
-#   my ($request, $response) = @_;
-#   $response->code(RC_OK);
-#   $response->push_header("Content-Type", "text/plain");
-#   $response->content("Hello handler:\n\n");
-#   return RC_OK;
-# }
-
-# sub handleGoodbye {
-#   my ($request, $response) = @_;
-#   $response->code(RC_OK);
-#   $response->push_header("Content-Type", "text/plain");
-#   $response->content("Goodbye handler:\n\n");
-#   return RC_OK;
-# }
 
 1;

@@ -59,8 +59,7 @@ sub re_read_config {
   if ( defined($self->{mtime}) ) {
     my $mtime = (stat($self->{Config}))[9];
     if ( $mtime > $self->{mtime} ) {
-      $self->Log("Config file has changed, re-reading...");
-      $self->ReadConfig('PSP::Auctioneer',$self->{Config});
+      $self->ReadConfig($self->{Me},$self->{Config});
       $self->{mtime} = $mtime;
     }
   } else {
@@ -88,6 +87,25 @@ sub ReadConfig {
 
   no strict 'refs';
   map { $this->{$_} = $hash->{$_} } keys %$hash;
+  if ( $this->can('PostReadConfig') ) { $this->PostReadConfig(); }
+}
+
+sub _default {
+  my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
+  my $ref = ref($self);
+  die <<EOF;
+
+  Default handler for class $ref:
+  The default handler caught an unhandled "$_[ARG0]" event.
+  The $_[ARG0] event was given these parameters: @{$_[ARG1]}
+
+  (...end of dump)
+EOF
+}
+
+sub _start {
+  my ( $self, $kernel, $session ) = @_[ OBJECT, KERNEL, SESSION ];
+  $kernel->delay_set('re_read_config',$self->{ConfigPoll});
 }
 
 sub timestamp {
