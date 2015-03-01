@@ -14,37 +14,52 @@ $Data::Dumper::Indent=0;
 sub new {
   my $proto = shift;
   my $class = ref($proto) || $proto;
-  my ($self,$help,%params,%args);
+  my ($self,$help,%params,%args,%pLower);
   %args = @_;
-  map { $args{uc $_} = delete $args{$_} } keys %args;
-  %params = (
-          CONFIG    => undef,
-          LOG       => undef,
-          VERBOSE   => 0,
-          DEBUG     => 0,
-        );
-  
-  $self = \%params;
-  bless $self, $class;
 
-  if ( ! defined ($self->{CONFIG}=$args{CONFIG}) ) {
-    die "No --config file specified!\n";
+  %params = (
+          Me            => __PACKAGE__,
+          Config        => undef,
+          Log           => undef,
+          Verbose       => 0,
+          Debug         => 0,
+          Logfile       => undef,
+          Pidfile       => undef,
+          ConfigPoll    => 3,
+
+          EqTimeout     => 15,  # How long with no bids before declaring equilibrium?
+          Epsilon       =>  5,  # bid-fee
+          Q             => 100, # How much of whatever I'm selling
+        );
+
+  $self = \%params;
+  map { $pLower{lc $_} = $_ } keys %params;
+
+  bless $self, $class;
+  foreach ( keys %args ) {
+    if ( exists $pLower{lc $_} ) {
+      $self->{$pLower{lc $_}} = delete $args{$_};
+    }
   }
-  $self->ReadConfig();
-  map { $self->{uc $_} = $args{$_} if $args{$_} } keys %args;
-  if ( $self->{LOGFILE} && ! $self->{PIDFILE} ) {
-    $self->{PIDFILE} = $self->{LOGFILE};
-    $self->{PIDFILE} =~ s%.log$%%;
-    $self->{PIDFILE} .= '.pid';
+  map { $self->{$_} = $args{$_} if $args{$_} } keys %args;
+  die "No --config file specified!\n" unless defined $self->{Config};
+  $self->ReadConfig(__PACKAGE__,$self->{Config});
+
+  if ( $self->{Logfile} && ! $self->{Pidfile} ) {
+    $self->{Pidfile} = $self->{Logfile};
+    $self->{Pidfile} =~ s%.log$%%;
+    $self->{Pidfile} .= '.pid';
   }
-  $self->daemon() if $self->{LOGFILE};
+  $self->daemon() if $self->{Logfile};
 
   $self->{QUEUE} = POE::Queue::Array->new();
 
   POE::Session->create(
     object_states => [
       $self => {
-        re_read_config => 're_read_config',
+        _start          => '_start',
+        _default        => '_default',
+        re_read_config  => 're_read_config',
       },
     ],
   );
@@ -67,7 +82,7 @@ EOF
 
 sub _start {
   my ( $self, $kernel, $session ) = @_[ OBJECT, KERNEL, SESSION ];
-  $kernel->delay_set('re_read_config',$self->{CONFIG_POLL});
+  $kernel->delay_set('re_read_config',$self->{ConfigPoll});
 }
 
 1;

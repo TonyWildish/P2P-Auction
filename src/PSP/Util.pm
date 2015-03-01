@@ -1,6 +1,7 @@
 package PSP::Util;
 use strict;
 use warnings;
+use Carp;
 use POE;
 use JSON::XS;
 
@@ -8,16 +9,19 @@ use Data::Dumper;
 $Data::Dumper::Terse=1;
 $Data::Dumper::Indent=0;
 
+sub Log { my $self=shift; print timestamp(), ': ', @_, "\n"; }
+sub Dbg { my $self=shift; print timestamp(), ': ', @_, "\n" if $self->{Debug}; }
+
 sub daemon {
   my ($self, $me) = @_;
   my $pid;
 
   # Open the pid file.
-  open(PIDFILE, "> $self->{PIDFILE}")
-      || die "$me: fatal error: cannot write to PID file ($self->{PIDFILE}): $!\n";
-  $me = $self->{ME} unless $me;
+  open(PIDFILE, "> $self->{Pidfile}")
+      || die "$me: fatal error: cannot write to PID file ($self->{Pidfile}): $!\n";
+  $me = $self->{Me} unless $me;
 
-  return if $self->{NODAEMON};
+  return if $self->{Nodaemom};
 
   # Fork once to go to background
   die "failed to fork into background: $!\n"
@@ -35,21 +39,15 @@ sub daemon {
   close STDERR if $pid; # Hack to suppress misleading POE kernel warning
   exit(0) if $pid;
 
-  # Clear umask
-  # umask(0);
-
   # Write our pid to the pid file while we still have the output.
   ((print PIDFILE "$$\n") && close(PIDFILE))
-      or die "$me: fatal error: cannot write to $self->{PIDFILE}: $!\n";
+      or die "$me: fatal error: cannot write to $self->{Pidfile}: $!\n";
 
-  # Indicate we've started
-  print "$me: pid $$", ( $self->{DROPDIR} ? " started in $self->{DROPDIR}" : '' ), "\n";
-
-  print "writing logfile to $self->{LOGFILE}\n";
+  print "writing logfile to $self->{Logfile}\n";
   # Close/redirect file descriptors
-  $self->{LOGFILE} = "/dev/null" if ! defined $self->{LOGFILE};
-  open (STDOUT, ">> $self->{LOGFILE}")
-      or die "$me: cannot redirect output to $self->{LOGFILE}: $!\n";
+  $self->{Logfile} = "/dev/null" if ! defined $self->{Logfile};
+  open (STDOUT, ">> $self->{Logfile}")
+      or die "$me: cannot redirect output to $self->{Logfile}: $!\n";
   open (STDERR, ">&STDOUT")
       or die "Can't dup STDOUT: $!";
   open (STDIN, "</dev/null");
@@ -59,34 +57,53 @@ sub daemon {
 sub re_read_config {
   my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
   if ( defined($self->{mtime}) ) {
-    my $mtime = (stat($self->{CONFIG}))[9];
+    my $mtime = (stat($self->{Config}))[9];
     if ( $mtime > $self->{mtime} ) {
-      $self->Logmsg("Config file has changed, re-reading...");
-      $self->ReadConfig();
+      $self->Log("Config file has changed, re-reading...");
+      $self->ReadConfig('PSP::Auctioneer',$self->{Config});
       $self->{mtime} = $mtime;
     }
   } else {
-    $self->{mtime} = (stat($self->{CONFIG}))[9] or 0;
+    $self->{mtime} = (stat($self->{Config}))[9] or 0;
   }
 
-  $kernel->delay_set('re_read_config',$self->{CONFIG_POLL});
+  $kernel->delay_set('re_read_config',$self->{ConfigPoll});
 }
 
 sub ReadConfig {
-  my $self = shift;
+  my ($this,$hash,$file) = @_;
 
-  $self->Logmsg("Reading config file $self->{CONFIG}");
-  open CONFIG, "<$self->{CONFIG}" or die "Cannot open config file $self->{CONFIG}: $!\n";
-
-  while ( <CONFIG> ) {
-    next if m%^\s*#%;
-    next if m%^\s*$%;
-    s%#.*$%%;
-
-    next unless m%\s*(\S+)\s*=\s*(\S+)\s*$%;
-    $self->{uc $1} = $2;
+  $file = $this->{Config} unless $file;
+  defined($hash) or die "No named item from config file for $this->{Me}\n";
+  defined($file) && -f $file or die "No config file for $this->{Me}\n";
+ 
+  $this->Log("Reading '$hash' entry from $file");
+  eval {
+    do "$file";
+  };
+  if ( $@ ) {
+    carp "ReadConfig: $file: $@\n";
+    return;
   }
-  close CONFIG;
+
+  no strict 'refs';
+  map { $this->{$_} = $hash->{$_} } keys %$hash;
+}
+
+sub timestamp {
+  my ($year,$month,$day,$hour,$minute,$seconds) = @_;
+
+  my @n = localtime;
+
+  defined($year)    or $year    = $n[5] + 1900;
+  defined($month)   or $month   = $n[4] + 1;
+  defined($day)     or $day     = $n[3];
+  defined($hour)    or $hour    = $n[2];
+  defined($minute)  or $minute  = $n[1];
+  defined($seconds) or $seconds = $n[0];
+
+  sprintf("%04d%02d%02d-%02d:%02d:%02d",
+          $year,$month,$day,$hour,$minute,$seconds);
 }
 
 1;
