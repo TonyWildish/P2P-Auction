@@ -1,0 +1,330 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"><script type="text/javascript" src="trexdoc_files/analytics.js"></script>
+<script type="text/javascript">archive_analytics.values.server_name="wwwb-app11.us.archive.org";archive_analytics.values.server_ms=326;</script>
+<link type="text/css" rel="stylesheet" href="trexdoc_files/banner-styles.css">
+
+
+
+
+<!-- BEGIN WAYBACK TOOLBAR INSERT -->
+<script type="text/javascript" src="trexdoc_files/disclaim-element.js"></script>
+<script type="text/javascript" src="trexdoc_files/graph-calc.js"></script>
+<script type="text/javascript" src="trexdoc_files/jquery.js"></script>
+<script type="text/javascript">//<![CDATA[
+var __wm = (function(){
+var wbPrefix = "/web/";
+var wbCurrentUrl = "http://comet.ctr.columbia.edu/~nemo/Trex/trexdoc.html";
+
+var firstYear = 1996;
+var imgWidth = 500,imgHeight = 27;
+var yearImgWidth = 25,monthImgWidth = 2;
+var displayDay = "23";
+var displayMonth = "May";
+var displayYear = "1997";
+var prettyMonths = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var $D=document,$=function(n){return document.getElementById(n)};
+var trackerVal,curYear = -1,curMonth = -1;
+var yearTracker,monthTracker;
+function showTrackers(val) {
+  if (val===trackerVal) return;
+  var $ipp=$("wm-ipp");
+  var $y=$("displayYearEl"),$m=$("displayMonthEl"),$d=$("displayDayEl");
+  if (val) {
+    $ipp.className="hi";
+  } else {
+    $ipp.className="";
+    $y.innerHTML=displayYear;$m.innerHTML=displayMonth;$d.innerHTML=displayDay;
+  }
+  yearTracker.style.display=val?"inline":"none";
+  monthTracker.style.display=val?"inline":"none";
+  trackerVal = val;
+}
+function getElementX2(obj) {
+  var $e=jQuery(obj);
+  return (typeof $e=="undefined"||typeof $e.offset=="undefined")?
+    getElementX(obj):Math.round($e.offset().left);
+}
+function trackMouseMove(event,element) {
+  var eventX = getEventX(event);
+  var elementX = getElementX2(element);
+  var xOff = Math.min(Math.max(0, eventX - elementX),imgWidth);
+  var monthOff = xOff % yearImgWidth;
+
+  var year = Math.floor(xOff / yearImgWidth);
+  var monthOfYear = Math.min(11,Math.floor(monthOff / monthImgWidth));
+  // 1 extra border pixel at the left edge of the year:
+  var month = (year * 12) + monthOfYear;
+  var day = monthOff % 2==1?15:1;
+  var dateString = zeroPad(year + firstYear) + zeroPad(monthOfYear+1,2) +
+    zeroPad(day,2) + "000000";
+
+  $("displayYearEl").innerHTML=year+firstYear;
+  $("displayMonthEl").innerHTML=prettyMonths[monthOfYear];
+  // looks too jarring when it changes..
+  //$("displayDayEl").innerHTML=zeroPad(day,2);
+  var url = wbPrefix + dateString + '/' +  wbCurrentUrl;
+  $("wm-graph-anchor").href=url;
+
+  if(curYear != year) {
+    var yrOff = year * yearImgWidth;
+    yearTracker.style.left = yrOff + "px";
+    curYear = year;
+  }
+  if(curMonth != month) {
+    var mtOff = year + (month * monthImgWidth) + 1;
+    monthTracker.style.left = mtOff + "px";
+    curMonth = month;
+  }
+}
+function hideToolbar() {
+  $("wm-ipp").style.display="none";
+}
+function bootstrap() {
+  var $spk=$("wm-ipp-sparkline");
+  yearTracker=$D.createElement('div');
+  yearTracker.className='yt';
+  with(yearTracker.style){
+    display='none';width=yearImgWidth+"px";height=imgHeight+"px";
+  }
+  monthTracker=$D.createElement('div');
+  monthTracker.className='mt';
+  with(monthTracker.style){
+    display='none';width=monthImgWidth+"px";height=imgHeight+"px";
+  }
+  $spk.appendChild(yearTracker);
+  $spk.appendChild(monthTracker);
+
+  var $ipp=$("wm-ipp");
+  $ipp&&disclaimElement($ipp);
+}
+return{st:showTrackers,mv:trackMouseMove,h:hideToolbar,bt:bootstrap};
+})();//]]>
+</script>
+<style type="text/css">
+body {
+  margin-top:0 !important;
+  padding-top:0 !important;
+  min-width:800px !important;
+}
+</style>
+<script>try {  for(var lastpass_iter=0; lastpass_iter < document.forms.length; lastpass_iter++){    var lastpass_f = document.forms[lastpass_iter];    if(typeof(lastpass_f.lpsubmitorig)=="undefined"){      if (typeof(lastpass_f.submit) == "function") {        lastpass_f.lpsubmitorig = lastpass_f.submit;        lastpass_f.submit = function(){          var form = this;          try {            if (document.documentElement && 'createEvent' in document)            {              var forms = document.getElementsByTagName('form');              for (var i=0 ; i<forms.length ; ++i)                if (forms[i]==form)                {                  var element = document.createElement('lpformsubmitdataelement');                  element.setAttribute('formnum',i);                  element.setAttribute('from','submithook');                  document.documentElement.appendChild(element);                  var evt = document.createEvent('Events');                  evt.initEvent('lpformsubmit',true,false);                  element.dispatchEvent(evt);                  break;                }            }          } catch (e) {}          try {            form.lpsubmitorig();          } catch (e) {}        }      }    }  }} catch (e) {}</script></head><body><div id="wm-ipp" style="display: block;" lang="en">
+
+<div style="position:fixed;left:0;top:0;width:100%!important">
+<div id="wm-ipp-inside">
+   <table style="width:100%;"><tbody><tr>
+   <td id="wm-logo">
+       <a href="http://web.archive.org/web/" title="Wayback Machine home page"><img src="trexdoc_files/wayback-toolbar-logo.png" alt="Wayback Machine" height="39" border="0" width="110"></a>
+   </td>
+   <td class="c">
+       <table style="margin:0 auto;"><tbody><tr>
+       <td class="u" colspan="2">
+       <form abineguid="43D351863235400C86A7002C0255AD3D" target="_top" method="get" action="/web/form-submit.jsp" name="wmtb" id="wmtb"><input name="url" id="wmtbURL" value="http://comet.ctr.columbia.edu/~nemo/Trex/trexdoc.html" style="width:400px;" onfocus="this.focus();this.select();" type="text"><input name="type" value="replay" type="hidden"><input name="date" value="19970523084324" type="hidden"><input value="Go" type="submit"><span id="wm_tb_options" style="display:block;"></span></form>
+       </td>
+       <td class="n" rowspan="2">
+           <table><tbody>
+           <!-- NEXT/PREV MONTH NAV AND MONTH INDICATOR -->
+           <tr class="m">
+           	<td class="b" nowrap="nowrap">
+		
+		    Apr
+		
+		</td>
+		<td class="c" id="displayMonthEl" title="You are here: 8:43:24 May 23, 1997">MAY</td>
+		<td class="f" nowrap="nowrap">
+		
+		    Jun
+		
+                </td>
+	    </tr>
+           <!-- NEXT/PREV CAPTURE NAV AND DAY OF MONTH INDICATOR -->
+           <tr class="d">
+               <td class="b" nowrap="nowrap">
+               
+                       <img src="trexdoc_files/wm_tb_prv_off.png" alt="Previous capture" height="16" border="0" width="14">
+               
+               </td>
+               <td class="c" id="displayDayEl" style="width:34px;font-size:24px;" title="You are here: 8:43:24 May 23, 1997">23</td>
+	       <td class="f" nowrap="nowrap">
+               
+                   <img src="trexdoc_files/wm_tb_nxt_off.png" alt="Next capture" height="16" border="0" width="14">
+               
+	       </td>
+           </tr>
+           <!-- NEXT/PREV YEAR NAV AND YEAR INDICATOR -->
+           <tr class="y">
+	       <td class="b" nowrap="nowrap">
+               
+                   1996
+               
+               </td>
+               <td class="c" id="displayYearEl" title="You are here: 8:43:24 May 23, 1997">1997</td>
+	       <td class="f" nowrap="nowrap">
+               
+                   1998
+               
+	       </td>
+           </tr>
+           </tbody></table>
+       </td>
+       </tr>
+       <tr>
+       <td class="s">
+           <a class="t" href="http://web.archive.org/web/19970523084324*/http://comet.ctr.columbia.edu/%7Enemo/Trex/trexdoc.html" title="See a list of every capture for this URL">1 captures</a>
+           <div class="r" title="Timespan for captures of this URL">23 May 97 - 23 May 97</div>
+       </td>
+       <td class="k">
+       <a href="" id="wm-graph-anchor">
+       <div id="wm-ipp-sparkline" title="Explore captures for this URL">
+	 <img id="sparklineImgId" alt="sparklines" onmouseover="__wm.st(1)" onmouseout="__wm.st(0)" onmousemove="__wm.mv(event,this)" src="trexdoc_files/graph.png" height="27" border="0" width="500">
+       <div style="display: none; width: 25px; height: 27px;" class="yt"></div><div style="display: none; width: 2px; height: 27px;" class="mt"></div></div>
+       </a>
+       </td>
+       </tr></tbody></table>
+   </td>
+   <td class="r">
+       <a href="#close" onclick="__wm.h();return false;" style="background-image:url(/static/images/toolbar/wm_tb_close.png);top:5px;" title="Close the toolbar">Close</a>
+       <a href="http://faq.web.archive.org/" style="background-image:url(/static/images/toolbar/wm_tb_help.png);bottom:5px;" title="Get some help using the Wayback Machine">Help</a>
+   </td>
+   </tr></tbody></table>
+</div>
+</div>
+</div>
+<script type="text/javascript">__wm.bt();</script>
+<!-- END WAYBACK TOOLBAR INSERT -->
+<menu>
+<li><a href="#howto">How to play</a></li>
+<li><a href="#platforms">Portability and Bugs</a></li>
+<li><a href="#docs">Docs/Links</a></li>
+<li><a href="#reviews">Reviews of TREX</a>
+</li></menu>
+<hr>
+<a name="howto">
+<h2>How to Play </h2>
+<h3>Connect</h3>
+
+<font size="+1">Press the <b>Connect</b> button</font> to connect to the TREX server and play
+in real-time against others!
+</a><p><a name="howto">
+After connecting, if you are the only current player, </a><a href="http://web.archive.org/web/19970523084324/http://comet.ctr.columbia.edu/%7Enemo/Trex/trexclient.html" target="_new"><b>connect a second
+player</b></a>. This will make the game more interesting.
+
+</p><p> The top line of text gives <em>connection</em> status info.  It
+also gives you the connection delays. The first number is time to send
+a Trex data unit from the applet, and the second number is processing
+time at the Trex server (rarely more than 10ms) plus round trip delay.
+If the horizontal bars in the top right corner are red most of the
+time, your delay is too long, and you will probably find the game
+slow.</p><p>
+
+Please <b>press Reset before leaving this page</b>: that is to ensure
+the connection with the server is broken cleanly, for everyone's good.
+
+</p><h3>The Game</h3>
+
+This is a dynamic auction game. 100 units of resource are on sale, and
+all connected players (applets) can place bids. The bidding goes on
+until an equilibrium is reached (an equilibrium is when 15 seconds
+elapse with no new bid by anyone).  At that point, the server computes
+allocations for each player. The game starts again after a 5 seconds
+pause (15 and 5 seconds are the defaults, I may change them once in a
+while).
+
+<h3>Strategy</h3>
+
+Select a strategy from the pull down menu.  An automated strategy
+called "Optimal" is selected by default.  In Optimal, the bids are
+placed according to a strategy that maximizes a utility function
+(profit) based on a random <b>valuation</b> of the resource.
+
+<p> Your valuation, which is indicated by the red horizontal line, is
+what you think the resource is worth. Press Reset to start the game
+with a new valuation.
+
+</p><h3>Bids</h3>
+A bid is for a certain quantity at a certain price, i.e. a point (q,p).
+<menu> 
+        <li>in Manual Play, place your bid by clicking with the mouse
+on the white surface: a red circle will indicate where you have placed
+it, the circle becomes a full red dot when the bid is successfully
+entered on the server
+	</li><li>the blue dots show your opponents' bids
+	</li><li> the magenta (purple) dot shows your allocation (what you
+would get) from the current profile of bids. The rule (formula)  which computes your allocation from the bids is described  <a href="ftp://ftp.ctr.columbia.edu/CTR-Research/comet/public/tech-reports/97/LAZ97.ps.gz">this paper</a>.
+</li></menu>
+
+<b>You can only get allocations on the white surface</b>, which is constrained by (and changes according to) the following:
+
+<menu><li> your budget (100 units of money). Eg, you can get at most for 100 units at a price of 1, or 20 units at a price of 5.
+	</li><li>you can only get the leftovers from higher bidders;	  the 
+player who bid for the highest price gets the  qty s/he bid for; the 
+next ranked player gets what they bid or what's left, whichever is 
+smaller; etc. So during the bidding, the white surface changes to show 
+what you can get given the current opponents' bids.
+
+</li></menu>
+
+<p>The yellow graph shows your utility (profit) for the current profile of bids.
+
+</p><hr>
+<a name="docs">
+<h2>Docs</h2>
+</a><menu><a name="docs">
+</a><li><a name="docs"></a><a href="http://web.archive.org/web/19970523084324/http://comet.ctr.columbia.edu/%7Enemo/java/api/Overview.html" target="_top">Trex API</a>
+</li><li><a href="ftp://ftp.ctr.columbia.edu/CTR-Research/comet/public/tech-reports/97/LAZ97.ps.gz">Auctions for Network Resource Sharing<img src="trexdoc_files/papers.gif" align="middle" border="0"></a> (the game theory behind TREX)
+</li><li><a href="http://web.archive.org/web/19970523084324/http://www.ctr.columbia.edu/%7Enemo/java/Trex/trex_arch.html" target="_top">A quick look at the TREX architecture</a>
+</li><li><a href="http://web.archive.org/web/19970523084324/http://www.ctr.columbia.edu/%7Enemo/trex.ps">T-REX (v0)<img src="trexdoc_files/papers.gif" align="middle" border="0"></a>(software report -- This describes <a href="http://web.archive.org/web/19970523084324/http://argo.ctr.columbia.edu:1024/%7Enemo/java/proto/trex.html" target="_top">TREX v0</a>)
+</li><li><a href="http://web.archive.org/web/19970523084324/http://www.ctr.columbia.edu/networking_games" target="_top">Networking Games Homepage.</a>
+</li><li><a href="http://web.archive.org/web/19970523084324/http://www.ctr.columbia.edu/%7Enemo/java" target="_top">My other applets</a>, including a previous version of TREX (commodity exchange).
+</li><li><a href="http://web.archive.org/web/19970523084324/http://www.ctr.columbia.edu/%7Enemo" target="_top">My Homepage.</a>
+</li></menu>
+<hr>
+<a name="reviews">
+<h2>Reviews</h2>
+</a><a href="http://web.archive.org/web/19970523084324/http://www.jars.com/" target="_top">
+                              <img src="trexdoc_files/5perc_s.gif" alt="Rated Top 5% WebApplet by JARS" align="right" height="95" border="0" width="115"></a>
+
+<a href="http://web.archive.org/web/19970523084324/http://www.jars.com/" target="_top">
+                              <img src="trexdoc_files/top10_s.gif" alt="Rated Top 10 WebApplet of the Month by JARS" align="right" height="95" border="0" width="115"></a>
+
+<menu>
+<li><a href="http://web.archive.org/web/19970523084324/http://www.javaworld.com/apprev/ar2.trex.html" target="_top">TREX reviewed by Java World</a>
+</li><li><a href="http://web.archive.org/web/19970523084324/http://www.jars.com/feb96ten.html" target="_top">JARS Top 10 (#B030209-1, Feb 96)</a>
+</li><li><a href="http://web.archive.org/web/19970523084324/http://www.jars.com/dec95ten.html" target="_top">JARS Top 10 (Dec 95)</a> (<a href="http://web.archive.org/web/19970523084324/http://comet.ctr.columbia.edu/%7Enemo/java">Trex v0</a>)
+</li><li><a href="http://web.archive.org/web/19970523084324/http://www.ttl.pactel.com/interactive/java.html" target="_top">Yet another ranking</a>
+</li></menu>
+
+<hr>
+<a name="platforms">
+<h2>Portability/Bugs</h2>
+This applet works on all hardware/OS/browser platforms supporting Java.  Please send comments and bug reports.
+Currently known bugs:
+</a><menu><a name="platforms">
+</a><li><a name="platforms">Netscape-3.x (HP-UX, Windows) may have <b>trouble loading some of
+the classes</b> of the applet. If this happens, try </a><a href="http://web.archive.org/web/19970523084324/http://argo.ctr.columbia.edu:1024/%7Enemo/java/Trex/trex.html" target="_top">this</a>,
+or <a href="http://web.archive.org/web/19970523084324/http://comet.ctr.columbia.edu/%7Enemo/java/Trex/trex.html" target="_top">this</a>,
+or <a href="http://web.archive.org/web/19970523084324/http://www.ctr.columbia.edu/%7Enemo/java/Trex/trex.html" target="_top">this</a>. If
+it does not work please <a href="mailto:nemo@ctr.columbia.edu">let me
+know</a>, and send me the exact error message in the Java console, as
+well as the full URL through which you reached the applet.
+</li><li>Netscape-3.x (Windows only), the bids dots may be mis-identified (your own bids may appear as blue instead of red)
+</li></menu>
+Please <a href="mailto:nemo@ctr.columbia.edu">send  comments and bug reports</a>. I am very very interested in hearing how the applet performs from different places on the Internet, and on different machines.
+
+<a href="mailto:nemo@ctr.columbia.edu">nemo@ctr.columbia.edu</a>
+ 
+
+
+
+
+
+
+
+</body></html>
+<!--
+     FILE ARCHIVED ON 8:43:24 May 23, 1997 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 11:07:46 Mar 1, 2015.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+-->

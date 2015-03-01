@@ -1,0 +1,397 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"><script type="text/javascript" src="RANGer%20API_files/analytics.js"></script>
+<script type="text/javascript">archive_analytics.values.server_name="wwwb-app17.us.archive.org";archive_analytics.values.server_ms=359;</script>
+<link type="text/css" rel="stylesheet" href="RANGer%20API_files/banner-styles.css">
+
+<title>RANGer API</title>
+
+
+
+<!-- BEGIN WAYBACK TOOLBAR INSERT -->
+<script type="text/javascript" src="RANGer%20API_files/disclaim-element.js"></script>
+<script type="text/javascript" src="RANGer%20API_files/graph-calc.js"></script>
+<script type="text/javascript" src="RANGer%20API_files/jquery.js"></script>
+<script type="text/javascript">//<![CDATA[
+var __wm = (function(){
+var wbPrefix = "/web/";
+var wbCurrentUrl = "http://comet.ctr.columbia.edu/%7Enemo/java/api/Overview.html";
+
+var firstYear = 1996;
+var imgWidth = 500,imgHeight = 27;
+var yearImgWidth = 25,monthImgWidth = 2;
+var displayDay = "29";
+var displayMonth = "Jan";
+var displayYear = "1999";
+var prettyMonths = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var $D=document,$=function(n){return document.getElementById(n)};
+var trackerVal,curYear = -1,curMonth = -1;
+var yearTracker,monthTracker;
+function showTrackers(val) {
+  if (val===trackerVal) return;
+  var $ipp=$("wm-ipp");
+  var $y=$("displayYearEl"),$m=$("displayMonthEl"),$d=$("displayDayEl");
+  if (val) {
+    $ipp.className="hi";
+  } else {
+    $ipp.className="";
+    $y.innerHTML=displayYear;$m.innerHTML=displayMonth;$d.innerHTML=displayDay;
+  }
+  yearTracker.style.display=val?"inline":"none";
+  monthTracker.style.display=val?"inline":"none";
+  trackerVal = val;
+}
+function getElementX2(obj) {
+  var $e=jQuery(obj);
+  return (typeof $e=="undefined"||typeof $e.offset=="undefined")?
+    getElementX(obj):Math.round($e.offset().left);
+}
+function trackMouseMove(event,element) {
+  var eventX = getEventX(event);
+  var elementX = getElementX2(element);
+  var xOff = Math.min(Math.max(0, eventX - elementX),imgWidth);
+  var monthOff = xOff % yearImgWidth;
+
+  var year = Math.floor(xOff / yearImgWidth);
+  var monthOfYear = Math.min(11,Math.floor(monthOff / monthImgWidth));
+  // 1 extra border pixel at the left edge of the year:
+  var month = (year * 12) + monthOfYear;
+  var day = monthOff % 2==1?15:1;
+  var dateString = zeroPad(year + firstYear) + zeroPad(monthOfYear+1,2) +
+    zeroPad(day,2) + "000000";
+
+  $("displayYearEl").innerHTML=year+firstYear;
+  $("displayMonthEl").innerHTML=prettyMonths[monthOfYear];
+  // looks too jarring when it changes..
+  //$("displayDayEl").innerHTML=zeroPad(day,2);
+  var url = wbPrefix + dateString + '/' +  wbCurrentUrl;
+  $("wm-graph-anchor").href=url;
+
+  if(curYear != year) {
+    var yrOff = year * yearImgWidth;
+    yearTracker.style.left = yrOff + "px";
+    curYear = year;
+  }
+  if(curMonth != month) {
+    var mtOff = year + (month * monthImgWidth) + 1;
+    monthTracker.style.left = mtOff + "px";
+    curMonth = month;
+  }
+}
+function hideToolbar() {
+  $("wm-ipp").style.display="none";
+}
+function bootstrap() {
+  var $spk=$("wm-ipp-sparkline");
+  yearTracker=$D.createElement('div');
+  yearTracker.className='yt';
+  with(yearTracker.style){
+    display='none';width=yearImgWidth+"px";height=imgHeight+"px";
+  }
+  monthTracker=$D.createElement('div');
+  monthTracker.className='mt';
+  with(monthTracker.style){
+    display='none';width=monthImgWidth+"px";height=imgHeight+"px";
+  }
+  $spk.appendChild(yearTracker);
+  $spk.appendChild(monthTracker);
+
+  var $ipp=$("wm-ipp");
+  $ipp&&disclaimElement($ipp);
+}
+return{st:showTrackers,mv:trackMouseMove,h:hideToolbar,bt:bootstrap};
+})();//]]>
+</script>
+<style type="text/css">
+body {
+  margin-top:0 !important;
+  padding-top:0 !important;
+  min-width:800px !important;
+}
+</style>
+<script>try {  for(var lastpass_iter=0; lastpass_iter < document.forms.length; lastpass_iter++){    var lastpass_f = document.forms[lastpass_iter];    if(typeof(lastpass_f.lpsubmitorig)=="undefined"){      if (typeof(lastpass_f.submit) == "function") {        lastpass_f.lpsubmitorig = lastpass_f.submit;        lastpass_f.submit = function(){          var form = this;          try {            if (document.documentElement && 'createEvent' in document)            {              var forms = document.getElementsByTagName('form');              for (var i=0 ; i<forms.length ; ++i)                if (forms[i]==form)                {                  var element = document.createElement('lpformsubmitdataelement');                  element.setAttribute('formnum',i);                  element.setAttribute('from','submithook');                  document.documentElement.appendChild(element);                  var evt = document.createEvent('Events');                  evt.initEvent('lpformsubmit',true,false);                  element.dispatchEvent(evt);                  break;                }            }          } catch (e) {}          try {            form.lpsubmitorig();          } catch (e) {}        }      }    }  }} catch (e) {}</script></head><body><div id="wm-ipp" style="display: block;" lang="en">
+
+<div style="position:fixed;left:0;top:0;width:100%!important">
+<div id="wm-ipp-inside">
+   <table style="width:100%;"><tbody><tr>
+   <td id="wm-logo">
+       <a href="http://web.archive.org/web/" title="Wayback Machine home page"><img src="RANGer%20API_files/wayback-toolbar-logo.png" alt="Wayback Machine" height="39" border="0" width="110"></a>
+   </td>
+   <td class="c">
+       <table style="margin:0 auto;"><tbody><tr>
+       <td class="u" colspan="2">
+       <form abineguid="C49FF8C9A9DD4DCB892DF2C1393AD343" target="_top" method="get" action="/web/form-submit.jsp" name="wmtb" id="wmtb"><input name="url" id="wmtbURL" value="http://comet.ctr.columbia.edu/%7Enemo/java/api/Overview.html" style="width:400px;" onfocus="this.focus();this.select();" type="text"><input name="type" value="replay" type="hidden"><input name="date" value="19990129040808" type="hidden"><input value="Go" type="submit"><span id="wm_tb_options" style="display:block;"></span></form>
+       </td>
+       <td class="n" rowspan="2">
+           <table><tbody>
+           <!-- NEXT/PREV MONTH NAV AND MONTH INDICATOR -->
+           <tr class="m">
+           	<td class="b" nowrap="nowrap">
+		
+		    <a href="http://web.archive.org/web/19970731035010/http://comet.ctr.columbia.edu/%7Enemo/java/api/Overview.html" title="31 Jul 1997">JUL</a>
+		
+		</td>
+		<td class="c" id="displayMonthEl" title="You are here: 4:08:08 Jan 29, 1999">JAN</td>
+		<td class="f" nowrap="nowrap">
+		
+		    <a href="http://web.archive.org/web/19990428172943/http://comet.ctr.columbia.edu/%7Enemo/java/api/Overview.html" title="28 Apr 1999"><strong>APR</strong></a>
+		
+                </td>
+	    </tr>
+           <!-- NEXT/PREV CAPTURE NAV AND DAY OF MONTH INDICATOR -->
+           <tr class="d">
+               <td class="b" nowrap="nowrap">
+               
+                   <a href="http://web.archive.org/web/19970731035010/http://comet.ctr.columbia.edu/%7Enemo/java/api/Overview.html" title="3:50:10 Jul 31, 1997"><img src="RANGer%20API_files/wm_tb_prv_on.png" alt="Previous capture" height="16" border="0" width="14"></a>
+               
+               </td>
+               <td class="c" id="displayDayEl" style="width:34px;font-size:24px;" title="You are here: 4:08:08 Jan 29, 1999">29</td>
+	       <td class="f" nowrap="nowrap">
+               
+		   <a href="http://web.archive.org/web/19990428172943/http://comet.ctr.columbia.edu/%7Enemo/java/api/Overview.html" title="17:29:43 Apr 28, 1999"><img src="RANGer%20API_files/wm_tb_nxt_on.png" alt="Next capture" height="16" border="0" width="14"></a>
+	       
+	       </td>
+           </tr>
+           <!-- NEXT/PREV YEAR NAV AND YEAR INDICATOR -->
+           <tr class="y">
+	       <td class="b" nowrap="nowrap">
+               
+                   <a href="http://web.archive.org/web/19970731035010/http://comet.ctr.columbia.edu/%7Enemo/java/api/Overview.html" title="31 Jul 1997"><strong>1997</strong></a>
+               
+               </td>
+               <td class="c" id="displayYearEl" title="You are here: 4:08:08 Jan 29, 1999">1999</td>
+	       <td class="f" nowrap="nowrap">
+               
+	           <a href="http://web.archive.org/web/20000526042537/http://comet.ctr.columbia.edu/%7Enemo/java/api/Overview.html" title="26 May 2000"><strong>2000</strong></a>
+	       
+	       </td>
+           </tr>
+           </tbody></table>
+       </td>
+       </tr>
+       <tr>
+       <td class="s">
+           <a class="t" href="http://web.archive.org/web/19990129040808*/http://comet.ctr.columbia.edu/%7Enemo/java/api/Overview.html" title="See a list of every capture for this URL">11 captures</a>
+           <div class="r" title="Timespan for captures of this URL">10 Apr 97 - 23 Jun 03</div>
+       </td>
+       <td class="k">
+       <a href="" id="wm-graph-anchor">
+       <div id="wm-ipp-sparkline" title="Explore captures for this URL">
+	 <img id="sparklineImgId" alt="sparklines" onmouseover="__wm.st(1)" onmouseout="__wm.st(0)" onmousemove="__wm.mv(event,this)" src="RANGer%20API_files/graph.png" height="27" border="0" width="500">
+       <div style="display: none; width: 25px; height: 27px;" class="yt"></div><div style="display: none; width: 2px; height: 27px;" class="mt"></div></div>
+       </a>
+       </td>
+       </tr></tbody></table>
+   </td>
+   <td class="r">
+       <a href="#close" onclick="__wm.h();return false;" style="background-image:url(/static/images/toolbar/wm_tb_close.png);top:5px;" title="Close the toolbar">Close</a>
+       <a href="http://faq.web.archive.org/" style="background-image:url(/static/images/toolbar/wm_tb_help.png);bottom:5px;" title="Get some help using the Wayback Machine">Help</a>
+   </td>
+   </tr></tbody></table>
+</div>
+</div>
+</div>
+<script type="text/javascript">__wm.bt();</script>
+<!-- END WAYBACK TOOLBAR INSERT -->
+<h1>Resource Allocation and Networking Gamer API Overview</h1>
+
+<menu>
+<li><a href="#intro">Introduction</a>
+</li><li><a href="#arch">Architecture</a>
+</li><li><a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/packages.html">API</a>
+</li><li><a href="#download">Download/Install</a>
+</li><li><a href="#trex">Example: how TREX works</a>
+</li><li><a href="#extend">Making your own variations on TREX</a>
+</li></menu>
+<hr>
+<a name="intro">
+<h2>Introduction</h2> 
+
+This document describes the Application
+Programming Interface of an architecture for resource allocation and
+networking games.
+</a><p><a name="intro">
+This has come out of two things: the growing use
+of </a><a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/networking_games">game
+theory for networking problems</a>, and the limitations of
+analytical game theory, which leads to the need for experimental
+approaches to complement the theory.
+</p><p>
+We define a set of <a href="http://web.archive.org/web/19990129040808/http://www.javasoft.com/">Java</a> classes
+that form an architecture for experimental games. The purpose is to
+provide the basic functionality, so that new games (and variations on
+existing games) can be implemented easily and systematically, by
+re-using these classes and/or extending (sub-classing) them. As of
+this writing, two games are implemented:
+</p><menu>
+<li><a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/html/trex.html">TREX</a>, which deals
+with <a href="ftp://ftp.ctr.columbia.edu/CTR-Research/comet/public/tech-reports/97/LAZ97.ps.gz">Auctions for Network Resource Sharing</a> is the canonical game;
+
+</li><li><a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/html/Mrex">MREX</a>, which was developed during my summer at the  <a href="http://web.archive.org/web/19990129040808/http://www.multimedia.bell-labs.com/projects">Multimedia Communications Research Deptartment at Bell Laboratories</a>, is an implementation of a routing and pricing game on a network of parallel links, based on <a href="ftp://ftp.ctr.columbia.edu/CTR-Research/comet/public/papers/97/KOR97a.ps.gz">the
+theoretical work of Korilis et al</a>.
+
+</li></menu>
+<p>
+</p><hr>
+<a name="arch">
+<h2>Architecture</h2> 
+
+The basic architecture is client-server. 
+</a><menu><a name="arch">
+
+</a><li><a name="arch">The clients are the "agents" or "players" in the game.  
+Clients are </a><a href="http://web.archive.org/web/19990129040808/http://java.sun.com/products/jdk/1.1/docs/api/java.applet.Applet.html">applets</a>, Java programs which are embedded in an <a href="http://web.archive.org/web/19990129040808/http://www.w3.org/pub/WWW/MarkUp/">HTML</a> document, and thus
+delivered via <a href="http://web.archive.org/web/19990129040808/http://www.w3.org/pub/WWW/Protocols/">HTTP</a>.
+
+</li><li>The server represents resource(s) that the agents are playing
+for. The server is also what enforces the rules of the game. Servers
+are <a href="http://web.archive.org/web/19990129040808/http://jserv.javasoft.com/products/java-server/servlets/index.html">Servlets</a>, objects that can be loaded at run-time by
+a web server when requested by a client.
+</li></menu>
+To play the game, you load a client applet by pointing your
+browser/appletviewer to the web page containing it.  The applet then
+connects to a web server, and tells it to start the Servlet for the
+game this applet wants to play. The applet then connects to the
+servlet, and plays against other clients who are connected to the same
+servlet. Due to security restrictions, if it is run within a general
+purpose web browser (like Netscape), the web server which controls the
+servlets must have the same host address as the web server which sent
+the applet. Ideally you would have a single web server sending applets
+and loading the correspondong servlets. In the appletviewer, this
+restriction can be disabled.
+
+<hr>
+<a name="trex">
+<h2>Example: how TREX works</h2>
+
+</a><a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/html/trex.html">TREX</a> is an implementation of the auction game described in the paper
+<a href="ftp://ftp.ctr.columbia.edu/CTR-Research/comet/public/tech-reports/97/LAZ97.ps.gz">Auctions
+for Network Resource Sharing</a>. It is the "canonical" game for this
+package and can be a basis on which other games are built.
+<p>
+When it is launched, the <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.TrexServlet.html">TrexServlet</a> starts listening for new
+clients on a server socket. When it gets a new client, it creates and
+starts a new <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.ClientHandler.html">ClientHandler</a>. When
+the ClientHandler accepts the client, it notifies the server that a
+new player has joined the game. In the case of the auction game, the
+servlet is specialized to a <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.BidManager.html">BidManager</a>. It starts a <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.TrexBidList.html">TrexBidList</a>, which will store players'
+bids and controls the time during which bids can be made.
+</p><p>
+Each <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.TrexClient.html">TrexClient</a> <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/java.applet.Applet.html">applet</a> talks only to its own ClientHandler on the server
+side.  All communications between the two consist only of sending and
+receiving <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.TrexData.html">TrexData</a> objects.  Once it
+has accepted the client, the <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.ClientHandler.html">ClientHandler</a> essentially does the
+following loop: receive a <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.TrexData.html">TrexData</a>,
+process it, write results into it, and send it back. Thus, it is
+always the client which initiates everything. For example, if the
+incoming TrexData contains a bid (i.e TrexData.cmd == BID), the ClientHandler passes the bid to the nidmanager by calling <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.BidManager.html#bid">BidManager.bid()</a>. The BidManager stores the bid and broadcasts it to all clients.
+</p><p>
+<a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.TrexData.html">TrexData</a> is more general than is
+needed for an auction game.  It contains a number of command fields
+and variables that can be used to "BUY", "SELL", and many other kinds
+of operations. It also measures it's own read and write delays,
+i.e. the time it takes to be sent and received.
+</p><p>
+The <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.TrexClient.html">TrexClient</a> applet has a thread
+which periodically sends a TrexData to the server. This is used to get
+general news (updates of time remaining, when other players join or
+leave, etc.). TrexClient has a <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.Player.html">Player</a>
+object, which in turn has a <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.Strategy.html">Strategy</a>. The Player has a loop which
+periodically tells the TrexClient to CHECK for other bids, i.e.  to
+ask the server for an update on opponents bids. Using these updates,
+it maintains its own <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.TrexBidList.html">TrexBidList</a>,
+i.e. a local copy of the global state (profile of all players
+bids). Because of delays, the state may differ from the "official"
+state at the server. The Player also periodically calls <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.Strategy.html#bid">Strategy.bid()</a>, to decide whether
+and how to bid, based on the current state of the bidlist. If the
+Strategy tells it to bid, then the Player tells the TrexClient to send
+a bid to the server.
+</p><p>
+When the round of bidding ends (the BidManager can simply end it after
+a fixed time, or if no bids have been received for a given duration),
+the BidManager computes the allocations based on the final state of
+the bidlist. The BidList itself is where the allocation rule is
+specified (see <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trex.TrexBidList.html#allocation">TrexBidList.allocation()</a>).
+</p><p>
+</p><hr>
+<a name="download">
+<h2>Download/Install</h2>
+
+For download instructions, please contact </a><a href="mailto:nemo@ctr.columbia.edu">nemo@ctr.columbia.edu</a>.
+
+<hr>
+<ol>
+<li>You must of course have already installed Sun's <a href="http://web.archive.org/web/19990129040808/http://www.javasoft.com/products/JDK/">Java Developer Kit (JDK)</a> (currently I am using JDK 1.1.5), and <a href="http://web.archive.org/web/19990129040808/http://jserv.javasoft.com/products/java-server/downloads/index.html">Java Servlet Development Kit (JSDK)</a>, or a servlet enabled webserver (such as JWS, Apache, IIS, etc. )
+
+</li><li><a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/ranger.tar.gz">download the file ranger.tar.gz</a> (classes + API docs: ~140K)  or <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/classes.tar.gz">classes.tar.gz</a> (classes only)
+</li><li>move it to the directory where you want to install, say you call
+it RANGER
+</li><li>uncompress the archive  and extract all the files from it
+</li></ol>
+
+For this to work in your environment, you must
+<ol>
+<li>add your RANGER directory to your CLASSPATH environment variable
+<menu>
+<li>Unix: setenv CLASSPATH RANGER:$CLASSPATH 
+</li><li>Windows NT: Control Panel -&gt; System -&gt; Environment -&gt; etc..
+</li></menu>
+</li><li>To use the client applet
+<menu>
+<li>If you are going to be loading your applet from an http server, in 
+the file RANGER/html/trexclient.html, change the CODEBASE tag to the URL
+ of your RANGER directory. 
+</li><li>You can also load it from your local file system: edit the file
+ trexlocal.html, and change the CODBASE tag to the path of your ranger 
+directory in your file system, e.g. "file://c:/RANGER".
+</li></menu>
+</li><li>Now you can load the client applet in your browser or 
+appletviewer by going to http://.../RANGER/html/trexclient.html or 
+file:/RANGER/html/trexlocal.html
+</li><li>The servlet server must be running on the CODEBASE host -- the 
+machine which the applet is loaded from (ie same host as the web server 
+if the applet is loaded by http, and same machine as the applet if you 
+are loading from your local file system)
+</li><li>To start the server, on your command line type
+<dd>cd RANGER/html
+</dd><dd>srun -v &gt; log 
+</dd>
+</li><li>This will start the server from which you can load the 
+servlets. The servlets' input parameters (in the the file 
+servlets.properties) must be consistent with the applets' input 
+parameters (in the file trexclient.html).
+
+<hr>
+
+<a name="extend">
+<h2>Making your own variations on TREX</h2>
+
+The </a><a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/Package-trex.user.html">trex.user</a> package contains examples on how you can modify the auction game in the  following ways
+<menu>
+<li>create your own bidding strategy
+</li><li>create your own auction rules
+</li><li>create a player with your own  utility (objective) function
+</li></menu>
+or any combination of the above. See the source of <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/trexclient.html">trexclient.html</a> to see how to use your own objects instead of the base classes.
+<p>
+The <a href="http://web.archive.org/web/19990129040808/http://comet.ctr.columbia.edu/%7Enemo/java/api/Package-opti.html">opti</a> package contains several
+classes that can be used to do standard optimization stuff, like
+minimizing functions of one or several variables. The algorithms in opti are taken from  <em>Numerical Recipes in C, 2nd edition</em>, W.H. Press et al, Cambridge University Press.
+</p><p>
+Let the games begin!
+</p><hr>
+<a href="http://web.archive.org/web/19990129040808/http://www.ctr.columbia.edu/%7Enemo">Nemo Semret</a>, <a href="mailto:nemo@ctr.columbia.edu">nemo@ctr.columbia.edu</a>. <br>
+$Id$
+
+
+
+
+
+<!--
+     FILE ARCHIVED ON 4:08:08 Jan 29, 1999 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 11:04:27 Mar 1, 2015.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+-->
+</li></ol></body></html>
