@@ -69,21 +69,19 @@ sub new {
     object_states => [
       $self => {
         _start          => '_start',
+        _stop           => '_stop',
         _child          => '_child',
         _default        => '_default',
         re_read_config  => 're_read_config',
         ContentHandler  => 'ContentHandler',
         ErrorHandler    => 'ErrorHandler',
-        hello           => 'hello',
-        goodbye         => 'goodbye',
-        allocation      => 'allocation',
 
-        PlaceBid        => 'PlaceBid',
+        SendHello       => 'SendHello',
+        SendBid         => 'SendBid',
       },
     ],
   );
 
-  $self->{ua} = LWP::UserAgent->new();
   return $self;
 }
 
@@ -91,7 +89,7 @@ sub PostReadConfig {
   my $self = shift;
   return if $self->{Port} == $self->{CurrentPort};
   if ( $self->{Listening} ) {
-    $self->Log("Port has changed, stop/start listening");
+    $self->Log('Port has changed, stop/start listening');
     $self->StopListening();
   }
   $self->{CurrentPort} = $self->{Port};
@@ -105,39 +103,47 @@ sub PostReadConfig {
 
   $self->{server} = 'http://' .
                     $self->{AuctioneerHost} . ':' .
-                    $self->{AuctioneerPort} . '/';
+                    $self->{AuctioneerPort} . '/' .
+                    $self->{Me} . '/';
 
-  $self->Log("Signal ",$self->{Me}," to start bidding");
-  POE::Kernel->yield('hello');
+  $self->Log('Signal ',$self->{Me},' to start bidding');
+  POE::Kernel->yield('SendHello');
 }
 
-sub hello { # Send a 'hello'
+sub SendHello { # Send a 'hello'
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  $self->Log("Hello handler...");
   my $url = $self->{server} . 'hello?';
   $url .= 'player=' . $self->{Me} . ';';
-  $url .= 'client=http://' . $self->{Host} . ':' . $self->{Port} . '/';
-  my $response = $self->{ua}->get($url);
+  $url .= 'url=http://' . $self->{Host} . ':' . $self->{Port} . '/';
+  my $response = $self->get($url);
+  $self->Log('SendHello... OK');
+  $kernel->yield('SendBid');
+}
+
+sub hello {
+  my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
+  # $self->Log('Hello handler...');
 }
 
 sub goodbye {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  $self->Log("Goodbye handler...");
+  $self->Log('Goodbye handler...');
 }
 
 sub allocation {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  $self->Log("Allocation handler...");
+  $self->Log('Allocation handler...');
 }
 
-sub PlaceBid {
+sub SendBid {
   my ($self,$kernel) = @_[ OBJECT, KERNEL ];
-  $self->Log("Start placing bids");
-  my ($url,$bid);
+  $self->Log('Start placing bids');
+  my ($url,$bid,$response);
   $url = $self->{server} . 'bid?';
   $bid = { q => 20, p => 4 };
   map { $url .= $_ . '=' . $bid->{$_} . ';' } sort keys %$bid;
-  my $response = $self->{ua}->get($url);
+  $response = $self->get($url);
+  $self->Log('Bid: (q=',$bid->{q},',p=',$bid->{p},')')
 }
 
 1;

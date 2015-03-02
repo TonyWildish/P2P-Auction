@@ -107,4 +107,11 @@ sub timestamp {
           $year,$month,$day,$hour,$minute,$seconds);
 }
 
+sub get {
+  my ($self,$url) = @_;
+  my $response = $self->{ua}->get($url);
+  return if $response->{_rc} == 200;
+  die "Got response ",$response->{_rc}," for url $url\n";
+}
+
 1;

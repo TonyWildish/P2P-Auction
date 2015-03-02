@@ -69,14 +69,14 @@ sub new {
     object_states => [
       $self => {
         _start          => '_start',
+        _stop           => '_stop',
         _child          => '_child',
         _default        => '_default',
         re_read_config  => 're_read_config',
         ContentHandler  => 'ContentHandler',
         ErrorHandler    => 'ErrorHandler',
-        hello           => 'hello',
-        goodbye         => 'goodbye',
-        bid             => 'bid',
+
+        SendAllocation  => 'SendAllocation',
       },
     ],
   );
@@ -88,7 +88,7 @@ sub PostReadConfig {
   my $self = shift;
   return if $self->{Port} == $self->{CurrentPort};
   if ( $self->{Listening} ) {
-    $self->Log("Port has changed, stop/start listening");
+    $self->Log('Port has changed, stop/start listening');
     $self->StopListening();
   }
   $self->{CurrentPort} = $self->{Port};
@@ -97,27 +97,40 @@ sub PostReadConfig {
 
 sub hello {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  $self->Log("Hello handler...");
-  my ($client,$player);
-  defined($client = $args->{client}) or die "No client defined in message\n";
+  my ($url,$player);
+  defined($url = $args->{url}) or die "No url defined in message\n";
   defined($player = $args->{player}) or die "No player defined in message\n";
-  $self->Log("Hello from '$client' (player: $player)");
-  $self->{players}{$player} = $client;
+  $self->{urls}{$player} = $url;
+  $self->{players}{$url} = $player;
+  $self->Log("Hello from $player ($url)");
 }
 
 sub goodbye {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  $self->Log("Goodbye handler...");
+  $self->Log('Goodbye handler...');
 }
 
 sub bid {
-  my ($self,$kernel,$args,$client) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
-  $self->Log("Bid handler...");
+  my ($self,$kernel,$args,$player) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
   my ($p,$q);
   defined($p = $args->{p}) or die "No price defined in bid\n";
   defined($q = $args->{q}) or die "No quantity defined in bid\n";
 
-  $self->Log("Client $client sent q=$q, p=$p");
+  $self->Log("Bid from $player: (q=$q,p=$p)");
+# TW
+  $kernel->yield('SendAllocation',$player,$q/2,$p+2);
 }
 
+sub SendAllocation {
+  my ($self,$kernel,$player,$allocation,$cost) = @_[ OBJECT, KERNEL, ARG0, ARG1, ARG2 ];
+  $self->Dbg('Allocate: ',$player,' (a=',$allocation,',c=',$cost,')');
+  my ($url,$response);
+  $url = $self->{urls}{$player} .
+         $self->{Me} . '/' .
+         'allocation?' .
+         'a=' . $allocation .
+         ';c=' . $cost;
+  $response = $self->get($url);
+  $self->Log('Allocate: ',$player,', (a=',$allocation,',c=',$cost,') OK')
+}
 1;

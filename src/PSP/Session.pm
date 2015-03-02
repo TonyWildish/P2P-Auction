@@ -3,12 +3,14 @@ use strict;
 use warnings;
 use HTTP::Status qw / :constants / ;
 use POE;
+use LWP::UserAgent;
 
 # use Data::Dumper;
 # $Data::Dumper::Terse=1;
 # $Data::Dumper::Indent=0;
 
 sub _child {}
+sub _stop {}
 
 sub _default {
   my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
@@ -29,6 +31,9 @@ sub _start {
   $self->Log("Alias set to ",$self->{Me});
   if ( $self->can('PostReadConfig') ) { $self->PostReadConfig(); }
   $kernel->delay_set('re_read_config',$self->{ConfigPoll});
+  $kernel->state($_, $self) foreach @{$self->{HandlerNames}};
+
+  $self->{ua} = LWP::UserAgent->new();
 }
 
 sub StopListening {
@@ -54,10 +59,16 @@ sub ContentHandler {
   $uri = $request->{_uri};
   $path = $uri->path();
   $query = $uri->query();
-  $self->Log("Got request for $path with query=", ($query ? $query : '') );
+  $self->Dbg("Got request for $path with query=", ($query ? $query : '') );
 
+# Players send a URL with their ID in it, but the Auctioneer doesn't
   $path =~ s%^/%%;
-  if ( ! $self->{Handlers}{$path} ) {
+  if ( $path =~ m%([^/]*)(/(.*))?$% ) {
+    $client = $1;
+    $path   = $3;
+  }
+  if ( !defined($path) ) { $path = $client; undef $client; }
+  if ( !defined($self->{Handlers}{$path}) ) {
     $self->Log("No handler for '$path': Forbidding...");
     $response->code(HTTP_FORBIDDEN);
     return HTTP_FORBIDDEN;
@@ -77,8 +88,6 @@ sub ContentHandler {
     }
     $args->{$key} = $value;
   }
-
-  $client = $request->{_headers}->header('host');
   $kernel->yield($path,$args,$client);
 
   $response->code(HTTP_OK);
