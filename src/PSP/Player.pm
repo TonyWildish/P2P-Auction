@@ -2,14 +2,14 @@ package PSP::Player;
 use strict;
 use warnings;
 
-use base 'PSP::Util';
+use HTTP::Status qw / :constants / ;
+use base 'PSP::Util', 'PSP::Session';
+use PSP::Listener;
 use POE;
-use POE::Queue::Array;
-use JSON::XS;
 
-use Data::Dumper;
-$Data::Dumper::Terse=1;
-$Data::Dumper::Indent=0;
+# use Data::Dumper;
+# $Data::Dumper::Terse=1;
+# $Data::Dumper::Indent=0;
 
 sub new {
   my $proto = shift;
@@ -31,6 +31,11 @@ sub new {
           CurrentPort   => 0,
           Port          => 3141,
           Listening     => 0,
+          HandlerNames  => [
+            'hello',
+            'goodbye',
+            'allocation',
+          ],
 
           EqTimeout     => undef,  # How long with no bids before declaring equilibrium?
           Epsilon       => undef,  # bid-fee
@@ -50,6 +55,8 @@ sub new {
   die "No --config file specified!\n" unless defined $self->{Config};
   $self->ReadConfig(__PACKAGE__,$self->{Config});
 
+  map { $self->{Handlers}{$_} = 1 } @{$self->{HandlerNames}};
+
   if ( $self->{Logfile} && ! $self->{Pidfile} ) {
     $self->{Pidfile} = $self->{Logfile};
     $self->{Pidfile} =~ s%.log$%%;
@@ -57,14 +64,20 @@ sub new {
   }
   $self->daemon() if $self->{Logfile};
 
-  $self->{QUEUE} = POE::Queue::Array->new();
-
   POE::Session->create(
     object_states => [
       $self => {
         _start          => '_start',
+        _child          => '_child',
         _default        => '_default',
         re_read_config  => 're_read_config',
+        ContentHandler  => 'ContentHandler',
+        ErrorHandler    => 'ErrorHandler',
+        hello           => 'hello',
+        goodbye         => 'goodbye',
+        allocation      => 'allocation',
+
+        PlaceBid        => 'PlaceBid',
       },
     ],
   );
@@ -87,17 +100,30 @@ sub PostReadConfig {
     $self->{$_} = $PSP::Auctioneer{$_};
   }
   $self->StartListening();
+
+  $self->Log("Signal ",$self->{Me}," to start bidding");
+  POE::Kernel->yield('PlaceBid');
 }
 
-sub StopListening {
-  my $self = shift;
-  $self->Log("Stub: StopListening");
+sub hello {
+  my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
+  $DB::single=1;
+  $self->Log("Hello handler...")
 }
 
-sub StartListening {
-  my $self = shift;
-  $self->Log("Stub: StartListening on port ",$self->{Port});
-  $self->{Listening} = 1;
+sub goodbye {
+  my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
+  $self->Log("Goodbye handler...")
+}
+
+sub allocation {
+  my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
+  $self->Log("Allocation handler...")
+}
+
+sub PlaceBid {
+  my ($self,$kernel) = @_[ OBJECT, KERNEL ];
+  $self->Log("Start placing bids");
 }
 
 1;

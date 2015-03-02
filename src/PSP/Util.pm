@@ -1,13 +1,11 @@
 package PSP::Util;
 use strict;
 use warnings;
-use Carp;
 use POE;
-use JSON::XS;
 
-use Data::Dumper;
-$Data::Dumper::Terse=1;
-$Data::Dumper::Indent=0;
+# use Data::Dumper;
+# $Data::Dumper::Terse=1;
+# $Data::Dumper::Indent=0;
 
 sub Log { my $self=shift; print timestamp(), ': ', @_, "\n"; }
 sub Dbg { my $self=shift; print timestamp(), ': ', @_, "\n" if $self->{Debug}; }
@@ -61,6 +59,7 @@ sub re_read_config {
     if ( $mtime > $self->{mtime} ) {
       $self->ReadConfig($self->{Me},$self->{Config});
       $self->{mtime} = $mtime;
+      if ( $self->can('PostReadConfig') ) { $self->PostReadConfig(); }
     }
   } else {
     $self->{mtime} = (stat($self->{Config}))[9] or 0;
@@ -81,32 +80,12 @@ sub ReadConfig {
     do "$file";
   };
   if ( $@ ) {
-    carp "ReadConfig: $file: $@\n";
+    die "ReadConfig: $file: $@\n";
     return;
   }
 
   no strict 'refs';
   map { $this->{$_} = $hash->{$_} } keys %$hash;
-  if ( $this->can('PostReadConfig') ) { $this->PostReadConfig(); }
-}
-
-sub _default {
-  my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
-  my $ref = ref($self);
-  die <<EOF;
-
-  Default handler for class $ref:
-  The default handler caught an unhandled "$_[ARG0]" event.
-  The $_[ARG0] event was given these parameters: @{$_[ARG1]}
-
-  (...end of dump)
-EOF
-}
-
-sub _start {
-  my ( $self, $kernel, $session ) = @_[ OBJECT, KERNEL, SESSION ];
-  $kernel->delay_set('re_read_config',$self->{ConfigPoll});
-  $kernel->alias_set($self->{Me});
 }
 
 sub timestamp {

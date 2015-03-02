@@ -2,15 +2,14 @@ package PSP::Auctioneer;
 use strict;
 use warnings;
 
-use base 'PSP::Util';
-use PSP::Listener;
 use HTTP::Status qw / :constants / ;
+use base 'PSP::Util', 'PSP::Session';
+use PSP::Listener;
 use POE;
-use JSON::XS;
 
-use Data::Dumper;
-$Data::Dumper::Terse=1;
-$Data::Dumper::Indent=0;
+# use Data::Dumper;
+# $Data::Dumper::Terse=1;
+# $Data::Dumper::Indent=0;
 
 sub new {
   my $proto = shift;
@@ -70,9 +69,11 @@ sub new {
     object_states => [
       $self => {
         _start          => '_start',
+        _child          => '_child',
         _default        => '_default',
         re_read_config  => 're_read_config',
         ContentHandler  => 'ContentHandler',
+        ErrorHandler    => 'ErrorHandler',
         hello           => 'hello',
         goodbye         => 'goodbye',
         bid             => 'bid',
@@ -92,59 +93,6 @@ sub PostReadConfig {
   }
   $self->{CurrentPort} = $self->{Port};
   $self->StartListening();
-}
-
-sub StopListening {
-  my $self = shift;
-  $self->Log("Stub: StopListening");
-}
-
-sub StartListening {
-  my $self = shift;
-  $self->Log("Stub: StartListening on port ",$self->{Port});
-  $self->{Listening} = 1;
-  $self->{Listener} = PSP::Listener->new (
-    Port  => $self->{Port},
-    Alias => $self->{Me},
-  );
-}
-
-sub ContentHandler {
-  my ($self,$kernel,$request, $response) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
-  my ($uri,$path,$query,$args,$substr,$key,$value);
-  $uri = $request->{_uri};
-  $path = $uri->path();
-  $query = $uri->query();
-  $self->Log("Got request for $path with query=", ($query ? $query : '') );
-
-  $path =~ s%^/%%;
-  if ( ! $self->{Handlers}{$path} ) {
-    $self->Log("No handler for '$path': Forbidding...");
-    $response->code(HTTP_FORBIDDEN);
-    return HTTP_FORBIDDEN;
-  }
-
-  while ( $query ) {
-    $query  =~ m%^([^&;]*)([&;](.*))?$%;
-    $substr = $1;
-    $query  = $3;
-    $substr =~ m%^([^=])*(=(.*))?$%;
-    $key    = $1;
-    $value  = $3;
-    if ( defined($value) ) {
-      $self->Dbg("Found key=$key, value=$value");
-    } else {
-      $self->Dbg("Found key=$key");
-    }
-    $args->{$key} = $value;
-  }
-
-  $kernel->yield($path,$args);
-
-  $response->code(HTTP_OK);
-  $response->push_header("Content-Type", "text/plain");
-  $response->content("\n\nThanks, I got the message:\n\n");
-  return HTTP_OK;
 }
 
 sub hello {

@@ -4,6 +4,7 @@ use strict;
 use POE;
 use POE::Component::Server::HTTP;
 use HTTP::Status qw / :constants / ;
+# use Data::Dumper;
 
 sub new {
   my $proto = shift;
@@ -12,8 +13,10 @@ sub new {
   %args = @_;
 
   %params = (
-          Port => undef,
+          Port           => undef,
           ContentHandler => undef,
+
+          Verbose        => undef,
         );
 
   $self = \%params;
@@ -27,23 +30,41 @@ sub new {
   }
   map { $self->{$_} = $args{$_} if $args{$_} } keys %args;
 
-  POE::Component::Server::HTTP->new(
+  $self->{alias} = POE::Component::Server::HTTP->new(
     Port           => $self->{Port},
-    ContentHandler => { "/" => $self->handler() },
-    Headers        => { Server => 'PSP::Listener', },
+    ContentHandler => { "/" => $self->ContentHandler() },
+    ErrorHandler   => { "/" => $self->ErrorHandler() },
+    Headers        => { Server => __PACKAGE__, },
   );
 
   return $self;
 }
 
-sub handler {
+sub ContentHandler {
   my $self = shift;
   return sub {
     my ($request,$response) = @_;
     my $ret = POE::Kernel->call($self->{Alias},'ContentHandler',$request,$response);
-    print "Got return-code ",$ret,"\n";
+    $self->{Verbose} && print "Listener: Got return-code ",$ret,"\n";
     return $ret;
   }
+}
+
+sub ErrorHandler {
+  my $self = shift;
+  return sub {
+    my ($request,$response) = @_;
+    my $ret = POE::Kernel->call($self->{Alias},'ErrorHandler',$request,$response);
+    $self->{Verbose} && print "Listener: Got return-code ",$ret,"\n";
+    return $ret;
+  }
+}
+
+sub stop {
+  my $self = shift;
+  POE::Kernel->call($self->{alias}{http}, 'shutdown');
+  POE::Kernel->call($self->{alias}{tcp},  'shutdown'); # Overkill, but hey...
+  print "Ignore the 'Use of uninitialized value' warnings, if any...\n";
 }
 
 1;
