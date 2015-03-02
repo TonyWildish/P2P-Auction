@@ -85,7 +85,10 @@ sub ReadConfig {
   }
 
   no strict 'refs';
+  my $nkeys = scalar keys %$hash;
+  if ( ! $nkeys ) { die "No '$hash' field in $file!\n"; }
   map { $this->{$_} = $hash->{$_} } keys %$hash;
+  undef %$hash;
 }
 
 sub timestamp {

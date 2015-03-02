@@ -50,7 +50,7 @@ sub StartListening {
 # Handlers for steering HTTP interaction
 sub ContentHandler {
   my ($self,$kernel,$request, $response) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
-  my ($uri,$path,$query,$args,$substr,$key,$value);
+  my ($uri,$path,$query,$args,$substr,$key,$value,$client);
   $uri = $request->{_uri};
   $path = $uri->path();
   $query = $uri->query();
@@ -67,7 +67,7 @@ sub ContentHandler {
     $query  =~ m%^([^&;]*)([&;](.*))?$%;
     $substr = $1;
     $query  = $3;
-    $substr =~ m%^([^=])*(=(.*))?$%;
+    $substr =~ m%^([^=]*)(=(.*))?$%;
     $key    = $1;
     $value  = $3;
     if ( defined($value) ) {
@@ -78,7 +78,8 @@ sub ContentHandler {
     $args->{$key} = $value;
   }
 
-  $kernel->yield($path,$args);
+  $client = $request->{_headers}->header('host');
+  $kernel->yield($path,$args,$client);
 
   $response->code(HTTP_OK);
   $response->push_header("Content-Type", "text/plain");
@@ -94,7 +95,7 @@ sub ErrorHandler {
   $uri = $request->{_uri};
   $path = $uri->path();
   $query = $uri->query();
-  $self->Log("Handle error on request for $path with query=", ($query ? $query : '') );
+  $self->Dbg("Handle error on request for $path with query=", ($query ? $query : '') );
 
   return HTTP_OK;
 }

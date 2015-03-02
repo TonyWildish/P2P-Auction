@@ -13,6 +13,7 @@ GetOptions(
     "debug"     => \$args{debug},
     "config=s"  => \$args{config},
     "log=s"     => \$args{log},
+    "name=s"    => \$args{me},  # override the default name!
     );
 
 sub usage {

@@ -6,6 +6,7 @@ use HTTP::Status qw / :constants / ;
 use base 'PSP::Util', 'PSP::Session';
 use PSP::Listener;
 use POE;
+use LWP::UserAgent;
 
 # use Data::Dumper;
 # $Data::Dumper::Terse=1;
@@ -53,7 +54,7 @@ sub new {
   }
   map { $self->{$_} = $args{$_} if $args{$_} } keys %args;
   die "No --config file specified!\n" unless defined $self->{Config};
-  $self->ReadConfig(__PACKAGE__,$self->{Config});
+  $self->ReadConfig($self->{Me},$self->{Config});
 
   map { $self->{Handlers}{$_} = 1 } @{$self->{HandlerNames}};
 
@@ -82,6 +83,7 @@ sub new {
     ],
   );
 
+  $self->{ua} = LWP::UserAgent->new();
   return $self;
 }
 
@@ -101,29 +103,41 @@ sub PostReadConfig {
   }
   $self->StartListening();
 
+  $self->{server} = 'http://' .
+                    $self->{AuctioneerHost} . ':' .
+                    $self->{AuctioneerPort} . '/';
+
   $self->Log("Signal ",$self->{Me}," to start bidding");
-  POE::Kernel->yield('PlaceBid');
+  POE::Kernel->yield('hello');
 }
 
-sub hello {
+sub hello { # Send a 'hello'
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  $DB::single=1;
-  $self->Log("Hello handler...")
+  $self->Log("Hello handler...");
+  my $url = $self->{server} . 'hello?';
+  $url .= 'player=' . $self->{Me} . ';';
+  $url .= 'client=http://' . $self->{Host} . ':' . $self->{Port} . '/';
+  my $response = $self->{ua}->get($url);
 }
 
 sub goodbye {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  $self->Log("Goodbye handler...")
+  $self->Log("Goodbye handler...");
 }
 
 sub allocation {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  $self->Log("Allocation handler...")
+  $self->Log("Allocation handler...");
 }
 
 sub PlaceBid {
   my ($self,$kernel) = @_[ OBJECT, KERNEL ];
   $self->Log("Start placing bids");
+  my ($url,$bid);
+  $url = $self->{server} . 'bid?';
+  $bid = { q => 20, p => 4 };
+  map { $url .= $_ . '=' . $bid->{$_} . ';' } sort keys %$bid;
+  my $response = $self->{ua}->get($url);
 }
 
 1;

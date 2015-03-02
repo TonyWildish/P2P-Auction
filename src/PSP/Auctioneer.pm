@@ -54,7 +54,7 @@ sub new {
   }
   map { $self->{$_} = $args{$_} if $args{$_} } keys %args;
   die "No --config file specified!\n" unless defined $self->{Config};
-  $self->ReadConfig(__PACKAGE__,$self->{Config});
+  $self->ReadConfig($self->{Me},$self->{Config});
 
   map { $self->{Handlers}{$_} = 1 } @{$self->{HandlerNames}};
 
@@ -97,18 +97,27 @@ sub PostReadConfig {
 
 sub hello {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  $DB::single=1;
-  $self->Log("Hello handler...")
+  $self->Log("Hello handler...");
+  my ($client,$player);
+  defined($client = $args->{client}) or die "No client defined in message\n";
+  defined($player = $args->{player}) or die "No player defined in message\n";
+  $self->Log("Hello from '$client' (player: $player)");
+  $self->{players}{$player} = $client;
 }
 
 sub goodbye {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  $self->Log("Goodbye handler...")
+  $self->Log("Goodbye handler...");
 }
 
 sub bid {
-  my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  $self->Log("Bid handler...")
+  my ($self,$kernel,$args,$client) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
+  $self->Log("Bid handler...");
+  my ($p,$q);
+  defined($p = $args->{p}) or die "No price defined in bid\n";
+  defined($q = $args->{q}) or die "No quantity defined in bid\n";
+
+  $self->Log("Client $client sent q=$q, p=$p");
 }
 
 1;
