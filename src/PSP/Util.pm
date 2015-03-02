@@ -106,6 +106,7 @@ EOF
 sub _start {
   my ( $self, $kernel, $session ) = @_[ OBJECT, KERNEL, SESSION ];
   $kernel->delay_set('re_read_config',$self->{ConfigPoll});
+  $kernel->alias_set($self->{Me});
 }
 
 sub timestamp {

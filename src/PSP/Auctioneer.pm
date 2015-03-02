@@ -4,9 +4,8 @@ use warnings;
 
 use base 'PSP::Util';
 use PSP::Listener;
-use HTTP::Status qw / RC_OK / ;
+use HTTP::Status qw / :constants / ;
 use POE;
-use POE::Queue::Array;
 use JSON::XS;
 
 use Data::Dumper;
@@ -33,6 +32,11 @@ sub new {
           CurrentPort   => 0,
           Port          => 3141,
           Listening     => 0,
+          HandlerNames  => [
+            'hello',
+            'goodbye',
+            'bid',
+          ],
 
 #         Parameters of the auction
           EqTimeout     => 15,  # How long with no bids before declaring equilibrium?
@@ -53,6 +57,8 @@ sub new {
   die "No --config file specified!\n" unless defined $self->{Config};
   $self->ReadConfig(__PACKAGE__,$self->{Config});
 
+  map { $self->{Handlers}{$_} = 1 } @{$self->{HandlerNames}};
+
   if ( $self->{Logfile} && ! $self->{Pidfile} ) {
     $self->{Pidfile} = $self->{Logfile};
     $self->{Pidfile} =~ s%.log$%%;
@@ -60,14 +66,16 @@ sub new {
   }
   $self->daemon() if $self->{Logfile};
 
-  $self->{QUEUE} = POE::Queue::Array->new();
-
   POE::Session->create(
     object_states => [
       $self => {
         _start          => '_start',
         _default        => '_default',
         re_read_config  => 're_read_config',
+        ContentHandler  => 'ContentHandler',
+        hello           => 'hello',
+        goodbye         => 'goodbye',
+        bid             => 'bid',
       },
     ],
   );
@@ -96,47 +104,63 @@ sub StartListening {
   $self->Log("Stub: StartListening on port ",$self->{Port});
   $self->{Listening} = 1;
   $self->{Listener} = PSP::Listener->new (
-    Port => $self->{Port},
-    # ContentHandler => {
-    #   "/"         => sub { $self->{handleRoot}(@_) },
-    #   "/bid"      => $self->{handleBid},
-    #   "/hello"    => $self->{handleHello},
-    #   "/goodbye"  => $self->{handleGoodbye},
-    # }
+    Port  => $self->{Port},
+    Alias => $self->{Me},
   );
 }
 
-# sub handleRoot {
-#   $DB::single=1;
-#   my ($request, $response) = @_;
-#   $response->code(RC_OK);
-#   $response->push_header("Content-Type", "text/plain");
-#   $response->content("Root handler:\n\n");
-#   return RC_OK;
-# }
+sub ContentHandler {
+  my ($self,$kernel,$request, $response) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
+  my ($uri,$path,$query,$args,$substr,$key,$value);
+  $uri = $request->{_uri};
+  $path = $uri->path();
+  $query = $uri->query();
+  $self->Log("Got request for $path with query=", ($query ? $query : '') );
 
-# sub handleBid {
-#   my ($request, $response) = @_;
-#   $response->code(RC_OK);
-#   $response->push_header("Content-Type", "text/plain");
-#   $response->content("Bid handler:\n\n");
-#   return RC_OK;
-# }
+  $path =~ s%^/%%;
+  if ( ! $self->{Handlers}{$path} ) {
+    $self->Log("No handler for '$path': Forbidding...");
+    $response->code(HTTP_FORBIDDEN);
+    return HTTP_FORBIDDEN;
+  }
 
-# sub handleHello {
-#   my ($request, $response) = @_;
-#   $response->code(RC_OK);
-#   $response->push_header("Content-Type", "text/plain");
-#   $response->content("Hello handler:\n\n");
-#   return RC_OK;
-# }
+  while ( $query ) {
+    $query  =~ m%^([^&;]*)([&;](.*))?$%;
+    $substr = $1;
+    $query  = $3;
+    $substr =~ m%^([^=])*(=(.*))?$%;
+    $key    = $1;
+    $value  = $3;
+    if ( defined($value) ) {
+      $self->Dbg("Found key=$key, value=$value");
+    } else {
+      $self->Dbg("Found key=$key");
+    }
+    $args->{$key} = $value;
+  }
 
-# sub handleGoodbye {
-#   my ($request, $response) = @_;
-#   $response->code(RC_OK);
-#   $response->push_header("Content-Type", "text/plain");
-#   $response->content("Goodbye handler:\n\n");
-#   return RC_OK;
-# }
+  $kernel->yield($path,$args);
+
+  $response->code(HTTP_OK);
+  $response->push_header("Content-Type", "text/plain");
+  $response->content("\n\nThanks, I got the message:\n\n");
+  return HTTP_OK;
+}
+
+sub hello {
+  my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
+  $DB::single=1;
+  $self->Log("Hello handler...")
+}
+
+sub goodbye {
+  my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
+  $self->Log("Goodbye handler...")
+}
+
+sub bid {
+  my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
+  $self->Log("Bid handler...")
+}
 
 1;

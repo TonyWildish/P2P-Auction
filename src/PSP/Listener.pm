@@ -3,7 +3,7 @@ use warnings;
 use strict;
 use POE;
 use POE::Component::Server::HTTP;
-use HTTP::Status qw / RC_OK / ;
+use HTTP::Status qw / :constants / ;
 
 sub new {
   my $proto = shift;
@@ -29,26 +29,21 @@ sub new {
 
   POE::Component::Server::HTTP->new(
     Port           => $self->{Port},
-    ContentHandler => {"/" => \&web_handler },
-    # ContentHandler => $self->{ContentHandler},
+    ContentHandler => { "/" => $self->handler() },
     Headers        => { Server => 'PSP::Listener', },
   );
 
   return $self;
 }
 
-
-sub web_handler {
-  my ($request, $response) = @_;
-  print "Got request for ",$request->{_uri}->path(),"\n";
-
-  # Build the response.
-  $response->code(RC_OK);
-  $response->push_header("Content-Type", "text/plain");
-  $response->content("That's all for now...\n\n");
-
-  # Signal that the request was handled okay.
-  return RC_OK;
+sub handler {
+  my $self = shift;
+  return sub {
+    my ($request,$response) = @_;
+    my $ret = POE::Kernel->call($self->{Alias},'ContentHandler',$request,$response);
+    print "Got return-code ",$ret,"\n";
+    return $ret;
+  }
 }
 
 1;
