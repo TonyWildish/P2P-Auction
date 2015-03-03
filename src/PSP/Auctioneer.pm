@@ -6,6 +6,7 @@ use HTTP::Status qw / :constants / ;
 use base 'PSP::Util', 'PSP::Session';
 use PSP::Listener;
 use POE;
+use JSON::XS;
 
 # use Data::Dumper;
 # $Data::Dumper::Terse=1;
@@ -38,9 +39,10 @@ sub new {
           ],
 
 #         Parameters of the auction
-          EqTimeout     => 15,  # How long with no bids before declaring equilibrium?
-          Epsilon       =>  5,  # bid-fee
+          EqTimeout     =>  15, # How long with no bids before declaring equilibrium?
+          Epsilon       =>   5, # bid-fee
           Q             => 100, # How much of whatever I'm selling
+          WaitForBids   =>   5, # Wait to gather more bids after one is received
         );
 
   $self = \%params;
@@ -77,6 +79,8 @@ sub new {
         ErrorHandler    => 'ErrorHandler',
 
         SendAllocation  => 'SendAllocation',
+        TriggerAuction  => 'TriggerAuction',
+        StartAuction    => 'StartAuction',
       },
     ],
   );
@@ -97,12 +101,12 @@ sub PostReadConfig {
 
 sub hello {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  my ($url,$player);
-  defined($url = $args->{url}) or die "No url defined in message\n";
-  defined($player = $args->{player}) or die "No player defined in message\n";
-  $self->{urls}{$player} = $url;
-  $self->{players}{$url} = $player;
-  $self->Log("Hello from $player ($url)");
+
+  defined($args->{url}) or die "No url defined in message\n";
+  defined($args->{player}) or die "No player defined in message\n";
+  $self->{urls}{$args->{player}} = $args->{url};
+  $self->{players}{$args->{url}} = $args->{player};
+  $self->Log('Hello from ',$args->{player},' (',$args->{url},')');
 }
 
 sub goodbye {
@@ -113,24 +117,46 @@ sub goodbye {
 sub bid {
   my ($self,$kernel,$args,$player) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
   my ($p,$q);
+
   defined($p = $args->{p}) or die "No price defined in bid\n";
   defined($q = $args->{q}) or die "No quantity defined in bid\n";
-
   $self->Log("Bid from $player: (q=$q,p=$p)");
+
+  $self->{bids}{$player} = [$q,$p];
+  $kernel->yield('TriggerAuction');
 # TW
-  $kernel->yield('SendAllocation',$player,$q/2,$p+2);
+  $self->{allocation}{$player} = [$q/2, $p+$self->{Epsilon}];
+}
+
+sub TriggerAuction {
+  my ($self,$kernel) = @_[ OBJECT, KERNEL ];
+  $self->Log("TriggerAuction");
+  return if $self->{AuctionStarted};
+  $self->{AuctionStarted} = 1;
+  $kernel->delay_set('StartAuction',$self->{WaitForBids});
+}
+
+sub StartAuction {
+  my ($self,$kernel) = @_[ OBJECT, KERNEL ];
+  $self->Log("Starting auction!");
+  foreach ( values %{$self->{players}} ) {
+    $kernel->yield('SendAllocation',$_);
+  }
 }
 
 sub SendAllocation {
-  my ($self,$kernel,$player,$allocation,$cost) = @_[ OBJECT, KERNEL, ARG0, ARG1, ARG2 ];
+  my ($self,$kernel,$player) = @_[ OBJECT, KERNEL, ARG0 ];
+  my ($allocation,$cost);
+  $allocation = $self->{allocation}{$player}[0];
+  $cost       = $self->{allocation}{$player}[1];
   $self->Dbg('Allocate: ',$player,' (a=',$allocation,',c=',$cost,')');
-  my ($url,$response);
-  $url = $self->{urls}{$player} .
-         $self->{Me} . '/' .
-         'allocation?' .
-         'a=' . $allocation .
-         ';c=' . $cost;
-  $response = $self->get($url);
-  $self->Log('Allocate: ',$player,', (a=',$allocation,',c=',$cost,') OK')
+  my $response = $self->get({
+        api    => 'allocation',
+        data   => $self->{allocation},
+        target => $self->{urls}{$player} . $player . '/'
+      });
+  $self->Log('Allocate: ',$player,', (a=',$allocation,',c=',$cost,') OK');
+  $self->{AuctionStarted} = 0;
 }
+
 1;

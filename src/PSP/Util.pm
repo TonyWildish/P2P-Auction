@@ -2,6 +2,7 @@ package PSP::Util;
 use strict;
 use warnings;
 use POE;
+use JSON::XS;
 
 # use Data::Dumper;
 # $Data::Dumper::Terse=1;
@@ -108,7 +109,9 @@ sub timestamp {
 }
 
 sub get {
-  my ($self,$url) = @_;
+  my ($self,$h) = @_;
+  my $url = ($h->{target} || $self->{server}) . $h->{api};
+  if ( $h->{data} ) { $url .= '?' . encode_json($h->{data}); }
   my $response = $self->{ua}->get($url);
   return if $response->{_rc} == 200;
   die "Got response ",$response->{_rc}," for url $url\n";

@@ -4,7 +4,10 @@ use strict;
 use POE;
 use POE::Component::Server::HTTP;
 use HTTP::Status qw / :constants / ;
+
 # use Data::Dumper;
+# $Data::Dumper::Terse=1;
+# $Data::Dumper::Indent=0;
 
 sub new {
   my $proto = shift;

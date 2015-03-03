@@ -6,6 +6,7 @@ use HTTP::Status qw / :constants / ;
 use base 'PSP::Util', 'PSP::Session';
 use PSP::Listener;
 use POE;
+use JSON::XS;
 use LWP::UserAgent;
 
 # use Data::Dumper;
@@ -106,17 +107,19 @@ sub PostReadConfig {
                     $self->{AuctioneerPort} . '/' .
                     $self->{Me} . '/';
 
-  $self->Log('Signal ',$self->{Me},' to start bidding');
+  $self->Log($self->{Me},': Start bidding!');
   POE::Kernel->yield('SendHello');
 }
 
-sub SendHello { # Send a 'hello'
+sub SendHello {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  my $url = $self->{server} . 'hello?';
-  $url .= 'player=' . $self->{Me} . ';';
-  $url .= 'url=http://' . $self->{Host} . ':' . $self->{Port} . '/';
-  my $response = $self->get($url);
+  my $data = {
+      player => $self->{Me},
+      url => 'http://' . $self->{Host} . ':' . $self->{Port} . '/'
+    };
+  my $response = $self->get( { api => 'hello', data => $data } );
   $self->Log('SendHello... OK');
+  $self->Log('Start placing bids');
   $kernel->yield('SendBid');
 }
 
@@ -132,17 +135,15 @@ sub goodbye {
 
 sub allocation {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  $self->Log('Allocation handler...');
+  $self->Log('Got allocation:');
+  $kernel->delay_set('SendBid',rand()/3);
 }
 
 sub SendBid {
   my ($self,$kernel) = @_[ OBJECT, KERNEL ];
-  $self->Log('Start placing bids');
-  my ($url,$bid,$response);
-  $url = $self->{server} . 'bid?';
-  $bid = { q => 20, p => 4 };
-  map { $url .= $_ . '=' . $bid->{$_} . ';' } sort keys %$bid;
-  $response = $self->get($url);
+  my ($bid,$response);
+  $bid = { q => int(rand(20)+10), p => int(rand(5)+3) };
+  $response = $self->get({ api => 'bid', data => $bid });
   $self->Log('Bid: (q=',$bid->{q},',p=',$bid->{p},')')
 }
 

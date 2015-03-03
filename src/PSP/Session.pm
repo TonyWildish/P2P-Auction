@@ -3,6 +3,8 @@ use strict;
 use warnings;
 use HTTP::Status qw / :constants / ;
 use POE;
+use JSON::XS;
+use URI::Encode qw(uri_encode uri_decode);
 use LWP::UserAgent;
 
 # use Data::Dumper;
@@ -58,14 +60,17 @@ sub ContentHandler {
   my ($uri,$path,$query,$args,$substr,$key,$value,$client);
   $uri = $request->{_uri};
   $path = $uri->path();
-  $query = $uri->query();
+  $query = uri_decode($uri->query());
   $self->Dbg("Got request for $path with query=", ($query ? $query : '') );
 
 # Players send a URL with their ID in it, but the Auctioneer doesn't
-  $path =~ s%^/%%;
-  if ( $path =~ m%([^/]*)(/(.*))?$% ) {
+  if ( $path =~ m%^/([^/]*)(/(.*))?$% ) {
     $client = $1;
     $path   = $3;
+  } else {
+    $self->Log("Don't understand request for $path");
+    $response->code(HTTP_FORBIDDEN);
+    return HTTP_FORBIDDEN;
   }
   if ( !defined($path) ) { $path = $client; undef $client; }
   if ( !defined($self->{Handlers}{$path}) ) {
@@ -74,20 +79,7 @@ sub ContentHandler {
     return HTTP_FORBIDDEN;
   }
 
-  while ( $query ) {
-    $query  =~ m%^([^&;]*)([&;](.*))?$%;
-    $substr = $1;
-    $query  = $3;
-    $substr =~ m%^([^=]*)(=(.*))?$%;
-    $key    = $1;
-    $value  = $3;
-    if ( defined($value) ) {
-      $self->Dbg("Found key=$key, value=$value");
-    } else {
-      $self->Dbg("Found key=$key");
-    }
-    $args->{$key} = $value;
-  }
+  $args = decode_json($query);
   $kernel->yield($path,$args,$client);
 
   $response->code(HTTP_OK);
