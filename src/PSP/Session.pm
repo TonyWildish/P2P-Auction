@@ -31,6 +31,7 @@ sub _start {
   my ( $self, $kernel, $session ) = @_[ OBJECT, KERNEL, SESSION ];
   $kernel->alias_set($self->{Me});
   $self->Log("Alias set to ",$self->{Me});
+  if ( $self->can('start') ) { $self->start(); }
   if ( $self->can('PostReadConfig') ) { $self->PostReadConfig(); }
   $kernel->delay_set('re_read_config',$self->{ConfigPoll});
   $kernel->state($_, $self) foreach @{$self->{HandlerNames}};

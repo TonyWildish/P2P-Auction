@@ -9,9 +9,9 @@ use POE;
 use JSON::XS;
 use LWP::UserAgent;
 
-# use Data::Dumper;
-# $Data::Dumper::Terse=1;
-# $Data::Dumper::Indent=0;
+use Data::Dumper;
+$Data::Dumper::Terse=1;
+$Data::Dumper::Indent=0;
 
 sub new {
   my $proto = shift;
@@ -25,7 +25,6 @@ sub new {
           Log           => undef,
           Verbose       => 0,
           Debug         => 0,
-          Logfile       => undef,
           Pidfile       => undef,
           ConfigPoll    => 3,
 
@@ -36,12 +35,15 @@ sub new {
           HandlerNames  => [
             'hello',
             'goodbye',
+            'offer',
             'allocation',
           ],
 
           EqTimeout     => undef,  # How long with no bids before declaring equilibrium?
           Epsilon       => undef,  # bid-fee
           Q             => undef, # How much of whatever is being sold
+
+          Strategy      => 'Random',
         );
 
   $self = \%params;
@@ -59,12 +61,20 @@ sub new {
 
   map { $self->{Handlers}{$_} = 1 } @{$self->{HandlerNames}};
 
-  if ( $self->{Logfile} && ! $self->{Pidfile} ) {
-    $self->{Pidfile} = $self->{Logfile};
+  $self->{Strategies} = {
+    'Random'        => 'StrategyRandom',
+    'Fixed'         => 'StrategyFixed',
+    'Interactive'   => 'StrategyInteractive',
+    'Optimal'       => 'StrategyOptimal',
+    'List'          => 'StrategyList',
+  };
+
+  if ( $self->{Log} && ! $self->{Pidfile} ) {
+    $self->{Pidfile} = $self->{Log};
     $self->{Pidfile} =~ s%.log$%%;
     $self->{Pidfile} .= '.pid';
   }
-  $self->daemon() if $self->{Logfile};
+  $self->daemon() if $self->{Log};
 
   POE::Session->create(
     object_states => [
@@ -83,6 +93,8 @@ sub new {
     ],
   );
 
+# TW
+  $self->{NBids} = 1;
   return $self;
 }
 
@@ -94,6 +106,12 @@ sub PostReadConfig {
     $self->StopListening();
   }
   $self->{CurrentPort} = $self->{Port};
+
+  my $strategy = $self->{Strategies}{$self->{Strategy}};
+  if ( !defined($strategy) ) {
+    die 'No handler for strategy ',$self->{Strategy},"\n";
+  }
+  $self->{StrategyHandler} = $self->can($strategy);
 
 # Cheat by setting these from the config file.
 # Should really ask the auctioneer for them instead...
@@ -123,6 +141,7 @@ sub SendHello {
   $kernel->yield('SendBid');
 }
 
+# Handlers for the interaction with the auctioneer
 sub hello {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
   # $self->Log('Hello handler...');
@@ -133,18 +152,74 @@ sub goodbye {
   $self->Log('Goodbye handler...');
 }
 
-sub allocation {
+sub offer {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  $self->Log('Got allocation:');
-  $kernel->delay_set('SendBid',rand()/3);
+  my $offer = $args->{$self->{Me}};
+  $self->Log('Got offer: (a=',$offer->[0],',c=',$offer->[1],')');
+  $kernel->delay_set('SendBid',rand()*1.5);
 }
 
+sub allocation {
+  my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
+  my $offer = $args->{$self->{Me}};
+  $self->Log('Got allocation: (a=',$offer->[0],',c=',$offer->[1],')');
+  $kernel->delay_set('SendBid',10+3*rand());
+# TW
+  $self->{NBids} = int(rand()*5+1) * 0 + 1;
+  print "\n";
+}
+
+# implement my own strategy
 sub SendBid {
   my ($self,$kernel) = @_[ OBJECT, KERNEL ];
-  my ($bid,$response);
-  $bid = { q => int(rand(20)+10), p => int(rand(5)+3) };
+  my ($bid,$response,$strategy);
+
+  if ( $self->{NBids}-- <= 0 ) {
+    $self->Log("I'm happy now :-)") if $self->{NBids} == 0;
+    return;
+  }
+
+  $bid = $self->{StrategyHandler}->($self);
+  if ( !$bid ) {
+    $self->Log('No more bids, now sit and wait...');
+    return;
+  }
   $response = $self->get({ api => 'bid', data => $bid });
-  $self->Log('Bid: (q=',$bid->{q},',p=',$bid->{p},')')
+  $self->Log('Bid: (q=',$bid->{q},',p=',$bid->{p},')',' (NBids = ',$self->{NBids},')');
+}
+
+# Strategies...
+sub StrategyRandom {
+  my $self = shift;
+  my $bid = { q => int(rand(20)+10), p => int(rand(5)+3) };
+  return $bid;
+}
+
+sub StrategyFixed {
+  my $self = shift;
+  my $bid = $self->{Bid};
+  $bid = { q => 50, p => 10 } unless $bid;
+  return $bid;
+}
+
+sub StrategyList {
+  my $self = shift;
+  my $bid = shift @{$self->{Bids}};
+  return $bid;
+}
+
+sub StrategyInteractive {
+  my $self = shift;
+  my ($p,$q);
+  print "q=?  > "; $q = <STDIN>; chomp($q);
+  print "p=?  > "; $p = <STDIN>; chomp($p);
+  print 'Read (q=',$q,',','p=',$p,")\n";
+  return { q => $q, p => $p };
+}
+
+sub StrategyOptimal {
+  my $self = shift;
+  die "Strategy not implemented yet\n";
 }
 
 1;

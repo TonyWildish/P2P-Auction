@@ -1,6 +1,7 @@
 package PSP::Util;
 use strict;
 use warnings;
+use POSIX;
 use POE;
 use JSON::XS;
 
@@ -8,8 +9,8 @@ use JSON::XS;
 # $Data::Dumper::Terse=1;
 # $Data::Dumper::Indent=0;
 
-sub Log { my $self=shift; print timestamp(), ': ', @_, "\n"; }
-sub Dbg { my $self=shift; print timestamp(), ': ', @_, "\n" if $self->{Debug}; }
+sub Log { my $self=shift; print timestamp(), ' ', $self->{Me}, ': ', @_, "\n"; }
+sub Dbg { my $self=shift; $self->Log(@_) if $self->{Debug}; }
 
 sub daemon {
   my ($self, $me) = @_;
@@ -42,11 +43,11 @@ sub daemon {
   ((print PIDFILE "$$\n") && close(PIDFILE))
       or die "$me: fatal error: cannot write to $self->{Pidfile}: $!\n";
 
-  print "writing logfile to $self->{Logfile}\n";
+  print "writing logfile to $self->{Log}\n";
   # Close/redirect file descriptors
-  $self->{Logfile} = "/dev/null" if ! defined $self->{Logfile};
-  open (STDOUT, ">> $self->{Logfile}")
-      or die "$me: cannot redirect output to $self->{Logfile}: $!\n";
+  $self->{Log} = "/dev/null" if ! defined $self->{Log};
+  open (STDOUT, ">> $self->{Log}")
+      or die "$me: cannot redirect output to $self->{Log}: $!\n";
   open (STDERR, ">&STDOUT")
       or die "Can't dup STDOUT: $!";
   open (STDIN, "</dev/null");
@@ -114,7 +115,7 @@ sub get {
   if ( $h->{data} ) { $url .= '?' . encode_json($h->{data}); }
   my $response = $self->{ua}->get($url);
   return if $response->{_rc} == 200;
-  die "Got response ",$response->{_rc}," for url $url\n";
+  die timestamp(), ": Got response ",$response->{_rc}," for url $url\n";
 }
 
 1;
