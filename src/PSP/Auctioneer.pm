@@ -258,9 +258,7 @@ sub Q_ {
 
   foreach $player ( @{$self->players()} ) {
     next if $player eq $s; # This means we loop over 's(-i)'
-    next unless defined( $self->{bids}{$player} );
     $bid = $self->{bids}{$player};
-    next unless $bid; print "Player=$player, ",Dumper($bid),"\n";
     next if $bid->[1] < $y;
     $Q_ -= $bid->[0];
   }

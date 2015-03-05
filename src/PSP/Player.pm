@@ -93,8 +93,6 @@ sub new {
     ],
   );
 
-# TW
-  $self->{NBids} = 1;
   return $self;
 }
 
@@ -112,6 +110,10 @@ sub PostReadConfig {
     die 'No handler for strategy ',$self->{Strategy},"\n";
   }
   $self->{StrategyHandler} = $self->can($strategy);
+
+  $self->{MaxBids} = 5;
+  if ( $self->{NBids} ) { $self->{MaxBids} = $self->{NBids}; }
+  $self->{NBids} = $self->{MaxBids};
 
 # Cheat by setting these from the config file.
 # Should really ask the auctioneer for them instead...
@@ -164,8 +166,8 @@ sub allocation {
   my $offer = $args->{$self->{Me}};
   $self->Log('Got allocation: (a=',$offer->[0],',c=',$offer->[1],')');
   $kernel->delay_set('SendBid',10+3*rand());
-# TW
-  $self->{NBids} = int(rand()*5+1) * 0 + 1;
+
+  $self->{NBids} = int( rand() * $self->{MaxBids} ) + 1;
   print "\n";
 }
 
@@ -174,7 +176,7 @@ sub SendBid {
   my ($self,$kernel) = @_[ OBJECT, KERNEL ];
   my ($bid,$response,$strategy);
 
-  if ( $self->{NBids}-- <= 0 ) {
+  if ( $self->{NBids}-- < 0 ) {
     $self->Log("I'm happy now :-)") if $self->{NBids} == 0;
     return;
   }
@@ -191,7 +193,7 @@ sub SendBid {
 # Strategies...
 sub StrategyRandom {
   my $self = shift;
-  my $bid = { q => int(rand(20)+10), p => int(rand(5)+3) };
+  my $bid = { q => int(rand($self->{Q})), p => int(rand(5)+3) };
   return $bid;
 }
 
