@@ -1,0 +1,37 @@
+
+1 Start
+
+2 Retrieve list of bids | previously sorted by decreasing bid price
+
+3 Retrieve new bid Si
+
+4 Retrieve total quantity Q
+
+5 Set Qi = Q; ai = ci = 0
+
+6 Find next-highest bid Sj = (qj,Pj)
+
+7 if ( Pj > Pi ) go to 8; else go to 10
+
+8 set Qi = Qi - Qj
+
+9 if ( Qi <= 0 ) return 0; else go to 6
+
+10 [Pj <= Pi] A = ai = min(Qi,qj)
+
+11 Insert bid j into sorted bids (in descending price-order)
+   Insert lowest bid Sj which would have been allocated some quantity. If an initial allocation has not yet been performed, then the lowest bid is identified which would have been allocated some of the resource if the new bid was not present
+   ** that should be 'i' and 'Si', not 'j' and 'Sj' ** ??
+
+12 Ci = Ci + Pj * ( min(qi,Qi) - min(qi,Qi-aj) )
+   ai = ai - min(qi,aj)
+
+13 Identify next-higher Pj
+
+14 if ( ai = 0 OR Pj > Pi ) return; else go to 12
+
+---------------------------------------------------
+If Q=9, the list of bids were (3,$7), (3,$6), (3,$2) and the new bid is (3,$5), then the new bidder gets 3 units at $2 each.
+
+If a new bid comes in at (3,$5.50) then that bidder gets the three units allocated to the player who bid $5, and is charged $5 per unit.
+
