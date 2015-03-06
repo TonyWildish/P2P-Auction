@@ -176,7 +176,7 @@ sub SendBid {
   my ($self,$kernel) = @_[ OBJECT, KERNEL ];
   my ($bid,$response,$strategy);
 
-  if ( $self->{NBids}-- < 0 ) {
+  if ( $self->{NBids}-- <= 0 ) {
     $self->Log("I'm happy now :-)") if $self->{NBids} == 0;
     return;
   }
