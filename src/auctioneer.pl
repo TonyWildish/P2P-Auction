@@ -11,6 +11,7 @@ GetOptions(
     "help"      => \$args{help},
     "verbose"   => \$args{verbose},
     "debug"     => \$args{debug},
+    "test"      => \$args{test}  ,
     "config=s"  => \$args{config},
     "log=s"     => \$args{log},
     );
@@ -32,5 +33,10 @@ EOF
 $args{help} && usage();
 
 my $auctioneer = new PSP::Auctioneer( %args, @ARGV );
+if ( $args{test} ) {
+  $auctioneer->test();
+  exit 0;
+}
+
 POE::Kernel->run();
 print "All done, outta here...\n";
