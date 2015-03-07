@@ -165,25 +165,23 @@ sub bid {
   defined($q = $args->{q}) or die "No quantity defined in bid\n";
   $self->Log("Bid from $player: (q=$q,p=$p)");
 
-  $self->RunPSP($player,[$q,$p]);
+  $self->RunPSP([$q,$p,$player]);
+  $self->showAuction();
   $kernel->yield('SendOffer','offer');
   # $self->{bids}{$player} = [$q,$p,$t]; # Quantity, Price, Timeout...
   # $self->{LastBidTime} = $t;
   # $kernel->yield('CollectingBids') if $self->{State} eq 'Idle';
 }
 
-# # handle my own FSM
-# sub Idle {
-#   my ($self,$kernel) = @_[ OBJECT, KERNEL ];
-#   $self->Log('State: Idle');
-#   $self->{State} = 'Idle';
-#   $self->{AuctionEndTime} = 0;
-#   delete $self->{bids};
-#   delete $self->{allocation};
-
-# # TW
-#   print "\n";
-# }
+# handle my own FSM
+sub Idle {
+  my ($self,$kernel) = @_[ OBJECT, KERNEL ];
+  $self->Log('State: Idle');
+  $self->{State} = 'Idle';
+  $self->{AuctionEndTime} = 0;
+  delete $self->{bids};
+  delete $self->{allocation};
+}
 
 # sub CollectingBids {
 # #   my ($self,$kernel) = @_[ OBJECT, KERNEL ];
@@ -234,143 +232,35 @@ sub bid {
 # #   }
 # }
 
-# sub SendOffer {
-#   my ($self,$kernel,$api) = @_[ OBJECT, KERNEL, ARG0 ];
-#   my ($allocation,$cost,$Api,$player);
-#   $Api = ucfirst $api;
-#   foreach $player ( @{$self->players()} ) {
-#     next unless defined($self->{allocation}{$player} );
-#     $allocation = $self->{allocation}{$player}[QUANTITY];
-#     $cost       = $self->{allocation}{$player}[PRICE];
-#     $self->Dbg($Api,': ',$player,' (a=',$allocation,',c=',$cost,')');
-#     my $response = $self->get({
-#           api    => $api,
-#           data   => $self->{allocation},
-#           target => $self->{urls}{$player} . $player . '/'
-#         });
-#     $self->Log($Api,': ',$player,', (a=',$allocation,',c=',$cost,') OK');
-#   }
-# }
-
-# # sub Q_ {
-# # # $y is the bid-price being compared to
-# # # $s is the player omitted from this strategy
-# #   my ($self,$y,$s) = @_;
-# #   my ($Q_,$player,$bid);
-# #   $Q_ = $self->{Q};
-
-# # # redundant...
-# #   if ( $y < 0 ) { die "Q_ not defined for negative y ($y,$s)\n"; }  
-
-# #   foreach $player ( @{$self->players()} ) {
-# #     # $bid = $self->{bids}{$player};
-# #     # print "  Q_($y,$s): player=$player, q=",$bid->[QUANTITY]," p=",$bid->[PRICE],", Q_=$Q_\n" if $self->{Test};
-
-# #     next if $player eq $s; # This means we loop over 's(-i)'
-# #     $bid = $self->{bids}{$player};
-# #     next if $bid->[PRICE] < $y;
-# #     $Q_ -= $bid->[QUANTITY];
-# #     # print "  Q_ = $Q_\n" if $self->{Test};
-# #   }
-# #   if ( $Q_ < 0 ) { $Q_ = 0; }
-# #   return $Q_;
-# # }
-
-# # sub allocation {
-# # # $i is the player, if any, under active consideration
-# # # $s is the player omitted from this strategy
-# #   my ($self,$i,$s) = @_;
-# #   my ($allocation,$p_i,$q_i,$Q_i);
-# #   print "Allocation: $i, $s\n";
-# #   $p_i = 0;
-# #   $p_i = $self->{bids}{$i}[PRICE] if $i;
-
-# #   $q_i = $self->{bids}{$s}[QUANTITY];
-# #   $Q_i = $self->Q_($p_i,$s);
-
-# #   if ( $q_i < $Q_i ) { $allocation = $q_i; }
-# #   else               { $allocation = $Q_i; }
-# #   print "Q_i($i,$s) = $Q_i, q_i = $q_i, allocation = $allocation\n";
-# #   return $allocation;
-# # }
-
-# # sub cost {
-# #   my ($self,$i) = @_;
-# #   my ($cost,$p_j,$player,$a0,$ai);
-
-# #   $cost = 0;
-# #   foreach $player ( @{$self->players()} ) {
-# #     next if $player eq $i;
-# #     print "Cost: $player, $i\n";
-# #     $a0 = $self->allocation(      0,$i);
-# #     $ai = $self->allocation($player,$i);
-# #     $p_j = $self->{bids}{$player}[PRICE];
-# #     $cost += $p_j * ($a0 - $ai );
-# #     print "Player $i: a0=$a0, ai=$ai, p_j=$p_j, cost=$cost\n";
-# #   }
-# #   return $cost;
-# # }
-
-# # sub test {
-# #   my $self = shift;
-# #   my ($i,$j);
-# #   $self->{players} = [ "player1", "player2" ];
-
-# # # A single player should get everything
-# #   # $self->{bids} = { "player1" => [70, 7, 999_999_999_999 ], };
-# #   # print "player1: q=",$self->{bids}{player1}[QUANTITY]," p=",$self->{bids}{player1}[PRICE],"\n";
-# #   # print "min-price=",$self->{bids}{player1}[PRICE],", omit player1\n";
-# #   # print ' Q_=',$self->Q_($self->{bids}{player1}[PRICE],'player1'),"\n\n";
-# #   # print "\n";
-
-# # # two bidders with same price: Q=(total - bid-of-other-player)
-# #   # $self->{bids} = {
-# #   #   "player1" => [60, 7, 999_999_999_999 ],
-# #   #   "player2" => [70, 7, 999_999_999_999 ],
-# #   # };
-# #   $self->{bids} = {
-# #     "player1" => [70, 7, 999_999_999_999 ],
-# #     "player2" => [70, 8, 999_999_999_999 ],
-# #   };
-
-# #   foreach $i ( sort @{$self->{players}} ) {
-# #     print "$i: q=",$self->{bids}{$i}[QUANTITY]," p=",$self->{bids}{$i}[PRICE],"\n";
-# #   }
-# #   print "\n";
-# #   print "min-price=",$self->{bids}{player1}[PRICE],", omit player2\n";
-# #   print ' Q_=',$self->Q_($self->{bids}{player1}[PRICE],'player2'),"\n\n";
-# #   print "\n";
-# #   print "min-price=",$self->{bids}{player2}[PRICE],", omit player1\n";
-# #   print ' Q_=',$self->Q_($self->{bids}{player2}[PRICE],'player1'),"\n\n";
-
-# #   print "allocation(player1,player2) = ",$self->allocation('player1','player2'),"\n";
-# #   print "allocation(player2,player1) = ",$self->allocation('player2','player1'),"\n\n";
-
-# # # Phase two...
-# #   exit 0;
-# #   $self->{bids} = {
-# #     "player1" => [89, 6, 999_999_999_999 ],
-# #     "player2" => [70, 7, 999_999_999_999 ],
-# #   };
-
-# #   foreach $i ( sort @{$self->{players}} ) {
-# #     print "$i: q=",$self->{bids}{$i}[QUANTITY]," p=",$self->{bids}{$i}[PRICE],"\n";
-# #   }
-# #   print "\n";
-# #   foreach $i ( sort @{$self->{players}} ) {
-# #     for ( $j=5; $j<=8; $j++ ) {
-# #       print "min-price=$j, omit player '$i'\n";
-# #       print ' Q_=',$self->Q_($j,$i),"\n\n";
-# #     }
-# #   }
-
-# #   print "allocation(player1,player2) = ",$self->allocation('player1','player2'),"\n\n";
-# #   print "allocation(player2,player1) = ",$self->allocation('player2','player1'),"\n\n";
-# #   print "allocation(0,player2) = ",$self->allocation(0,'player1'),"\n\n";
-# #   print "allocation(0,player2) = ",$self->allocation(0,'player2'),"\n\n";
-
-# #   exit 0;
-# # }
+sub SendOffer {
+  my ($self,$kernel,$api) = @_[ OBJECT, KERNEL, ARG0 ];
+  my ($allocation,$Api,$player);
+  $Api = ucfirst $api;
+  $DB::single=1;
+  foreach $player ( keys %{$self->{bids}} ) {
+    $allocation->{$player} = {
+      q => $self->{bids}{$player}[QUANTITY],
+      c => $self->{bids}{$player}[COST]
+    };
+  }
+  foreach $player ( sort keys %{$allocation} ) {
+    $self->Dbg($Api,': ',$player,
+      ' (a=',$allocation->{$player}{q},
+      ',c=', $allocation->{$player}{c},
+      ')'
+    );
+    my $response = $self->get({
+          api    => $api,
+          data   => $allocation,
+          target => $self->{urls}{$player} . $player . '/'
+        });
+    $self->Log($Api,': ',$player,
+      ' (a=',$allocation->{$player}{q},
+      ',c=', $allocation->{$player}{c},
+      ') OK'
+    );
+  }
+}
 
 sub min {
   my ($x,$y) = @_;
@@ -383,7 +273,9 @@ sub showAuction {
   my @ordered = map {
       $_->[PLAYER]
     } sort {
-      $b->[PRICE] <=> $a->[PRICE]
+      $b->[PRICE]      <=> $a->[PRICE]      ||
+      $b->[ALLOCATION] <=> $a->[ALLOCATION] ||
+      $b->[QUANTITY]   <=> $a->[QUANTITY]
     } values %{$self->{bids}};
 
   print " Player: Qty, Bid, Alloc, Cost\n";
@@ -401,43 +293,41 @@ sub showAuction {
 
 sub Allocations {
   my ($self,$bids,$omit) = @_;
-  my ($bid,$Qi,$i,$a);
-  $Qi = $self->{Q};
+  my ($bid_i,$bid_j,$Qi,$i,$j,$a);
   $omit = 0 unless defined $omit;
 
   for ( $i=0; $i<scalar @{$bids}; $i++ ) {
-    $bid = $bids->[$i];
-    next if ( $omit && $omit eq $bid->[PLAYER] );
-    $a->{$bid->[PLAYER]} = min($Qi,$bid->[QUANTITY]);
-    $Qi -= $a->{$bid->[PLAYER]};
-    $Qi = 0 if $Qi < 0;
+    $bid_i = $bids->[$i];
+    $a->{$bid_i->[PLAYER]} = 0;
+    next if ( $omit && $omit eq $bid_i->[PLAYER] );
+
+    $Qi = $self->{Q};
+    for ( $j=0; $j<scalar @{$bids}; $j++ ) {
+      next if $i == $j;
+      $bid_j = $bids->[$j];
+      last if $bid_j->[PRICE] < $bid_i->[PRICE];
+      $Qi -= $bid_j->[QUANTITY];
+      if ( $Qi <= 0 ) {
+        $Qi = 0;
+        last;
+      }
+    }
+    $a->{$bid_i->[PLAYER]} = min($Qi,$bid_i->[QUANTITY]);
   }
   return $a;
-}
-
-sub test {
-  my $self = shift;
-  $DB::single=1;
-  $self->RunPSP([70,3,'player1']); $self->showAuction();
-  $self->RunPSP([60,6,'player2']); $self->showAuction();
-  $self->RunPSP([50,4,'player3']); $self->showAuction();
-  $self->RunPSP([40,5,'player4']); $self->showAuction();
-  $self->RunPSP([55,9,'player5']); $self->showAuction();
-  $self->RunPSP([80,3,'player6']); $self->showAuction();
-
-  exit 0;
 }
 
 sub RunPSP {
   my ($self,$newbid) = @_;
   my ($player,$bids,@bids,$Qi,$bid,$aj,$allocations);
   $self->{bids} = {} unless defined $self->{bids};
-
-  $player = $newbid->[PLAYER];
-  print "RunPSP: New bid: Player=$player, bid=[",$newbid->[QUANTITY],',',$newbid->[PRICE],"]\n";
-
   $bids = $self->{bids};
-  $bids->{$player} = $newbid;
+
+  if ( $newbid ) {
+    $player = $newbid->[PLAYER];
+    print "RunPSP: New bid: Player=$player, bid=[",$newbid->[QUANTITY],',',$newbid->[PRICE],"]\n";
+    $bids->{$player} = $newbid;
+  }
 
 # Sort the bids by descending price-order
   @bids = sort { $b->[PRICE] <=> $a->[PRICE] }  values %{$bids};
@@ -450,7 +340,7 @@ sub RunPSP {
 # Calculate the allocations for each player.
   $allocations = $self->Allocations(\@bids);
   map { $self->{bids}{$_}->[ALLOCATION] = $allocations->{$_} } keys %{$allocations};
-  print 'Allocation for ',$player,' = ',$newbid->[ALLOCATION],"\n";
+  print 'Allocation for ',$player,' = ',$newbid->[ALLOCATION],"\n" if $newbid;
 
 # Now the quantities are allocated for all bids I can calculate the cost.
   foreach $bid ( @bids ) {
@@ -462,6 +352,58 @@ sub RunPSP {
             ( $allocations->{$_} - $self->{bids}{$_}[ALLOCATION] );
     }
   }
+}
+
+sub test {
+  my $self = shift;
+  $DB::single=1;
+  # $self->RunPSP([70,3,'player1']); $self->showAuction();
+  # $self->RunPSP([60,6,'player2']); $self->showAuction();
+  # $self->RunPSP([50,4,'player3']); $self->showAuction();
+  # $self->RunPSP([40,5,'player4']); $self->showAuction();
+  # $self->RunPSP([55,9,'player5']); $self->showAuction();
+  # $self->RunPSP([80,3,'player6']); $self->showAuction();
+
+# A single player should get everything
+  # $self->RunPSP([70, 7, 'player1' ]); $self->showAuction();
+
+# two bidders with same price not exceeding the total: cost=0
+  # $self->{bids} = {
+  #   "player1" => [70, 7, 'player1' ],
+  #   "player2" => [30, 7, 'player2' ],
+  # };
+  # print " ==> expect cost=0 for both players\n";
+  # $self->RunPSP(); $self->showAuction();
+
+# two bidders with same price, exceeding the total: cost=0
+  # $self->{bids} = {
+  #   "player1" => [70, 4, 'player1' ],
+  #   "player2" => [60, 4, 'player2' ],
+  # };
+  # print " ==> expect player1: (q=40,c=0), player2: (q=30,c=0)\n";
+  # $self->RunPSP(); $self->showAuction();
+
+# four bidders with same price, exceeding the total: cost=0
+  # $self->{bids} = {
+  #   "player1" => [30, 4, 'player1' ],
+  #   "player2" => [40, 4, 'player2' ],
+  #   "player3" => [50, 4, 'player3' ],
+  #   "player4" => [60, 4, 'player4' ],
+  # };
+  # print " ==> expect (q=0,c=0) for all players\n";
+  # $self->RunPSP(); $self->showAuction();
+
+# four bidders, three with same price, exceeding the total:
+  $self->{bids} = {
+    "player1" => [15, 4, 'player1' ],
+    "player2" => [25, 4, 'player2' ],
+    "player3" => [35, 4, 'player3' ],
+    "player4" => [45, 5, 'player4' ],
+  };
+  print " ==> expect player1(q=0,c=0), player2(q=5,c=20), player3(q=15,c=140), player4(q=45,c=220),\n";
+  $self->RunPSP(); $self->showAuction();
+
+  exit 0;
 }
 
 1;

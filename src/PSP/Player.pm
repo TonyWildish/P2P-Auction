@@ -57,6 +57,7 @@ sub new {
   }
   map { $self->{$_} = $args{$_} if $args{$_} } keys %args;
   die "No --config file specified!\n" unless defined $self->{Config};
+  die "No --name specified!\n" unless defined $self->{Me};
   $self->ReadConfig($self->{Me},$self->{Config});
 
   map { $self->{Handlers}{$_} = 1 } @{$self->{HandlerNames}};
@@ -157,14 +158,14 @@ sub goodbye {
 sub offer {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
   my $offer = $args->{$self->{Me}};
-  $self->Log('Got offer: (a=',$offer->[0],',c=',$offer->[1],')');
+  $self->Log('Got offer: (a=',$offer->{q},',c=',$offer->{c},')');
   $kernel->delay_set('SendBid',rand()*1.5);
 }
 
 sub allocation {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
   my $offer = $args->{$self->{Me}};
-  $self->Log('Got allocation: (a=',$offer->[0],',c=',$offer->[1],')');
+  $self->Log('Got allocation: (a=',$offer->{q},',c=',$offer->{c},')');
   $kernel->delay_set('SendBid',10+3*rand());
 
   $self->{NBids} = int( rand() * $self->{MaxBids} ) + 1;
