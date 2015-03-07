@@ -76,107 +76,101 @@ sub new {
   }
   $self->daemon() if $self->{Log};
 
-#   POE::Session->create(
-#     object_states => [
-#       $self => {
-#         _start          => '_start',
-#         _stop           => '_stop',
-#         _child          => '_child',
-#         _default        => '_default',
-#         re_read_config  => 're_read_config',
-#         ContentHandler  => 'ContentHandler',
-#         ErrorHandler    => 'ErrorHandler',
+  POE::Session->create(
+    object_states => [
+      $self => {
+        _start          => '_start',
+        _stop           => '_stop',
+        _child          => '_child',
+        _default        => '_default',
+        re_read_config  => 're_read_config',
+        ContentHandler  => 'ContentHandler',
+        ErrorHandler    => 'ErrorHandler',
 
-#         SendOffer       => 'SendOffer',
+        SendOffer       => 'SendOffer',
 
-# # The FSM for the auction
-# # The machine starts at Idle. When a bid comes in it switches to
-# # CollectingBids for a few seconds. Then it goes to AuctionStarted.
-# # In AuctionStarted it runs the auction and sends allocations,
-# # re-running and sending if new bids come in within a certain
-# # time-interval. After that it goes to AuctionEnded, which
-# # does the final house-keeping, then back to Idle again.
-# #
-# # In CollectingBids and AuctionStarted, incoming bids are added to
-# # the next or current auction. Any new bid will trigger a re-run of
-# # the auction with the existing bid-set, including bids from players
-# # who haven't re-bid once the auction has started.
-# #
-# # In AuctionStarted, the auctioneer sends 'offer' events to players.
-# # Once the auction is complete, it sends a final 'allocation' event.
-# #
-# # In AuctionEnded, the final allocations are made, and the
-# # existing set of bids are removed.
-# #
-# # Legal transitions are:
-# # Idle -> CollectingBids -> AuctionStarted -> AuctionEnded -> Idle
-#         CollectingBids  => 'CollectingBids',
-#         AuctionStarted  => 'AuctionStarted',
-#         AuctionEnded    => 'AuctionEnded',
-#         Idle            => 'Idle',
-#       },
-#     ],
-#   );
+# The FSM for the auction
+# The machine starts at Idle. When a bid comes in it switches to
+# CollectingBids for a few seconds. Then it goes to AuctionStarted.
+# In AuctionStarted it runs the auction and sends allocations,
+# re-running and sending if new bids come in within a certain
+# time-interval. After that it goes to AuctionEnded, which
+# does the final house-keeping, then back to Idle again.
+#
+# In CollectingBids and AuctionStarted, incoming bids are added to
+# the next or current auction. Any new bid will trigger a re-run of
+# the auction with the existing bid-set, including bids from players
+# who haven't re-bid once the auction has started.
+#
+# In AuctionStarted, the auctioneer sends 'offer' events to players.
+# Once the auction is complete, it sends a final 'allocation' event.
+#
+# In AuctionEnded, the final allocations are made, and the
+# existing set of bids are removed.
+#
+# Legal transitions are:
+# Idle -> CollectingBids -> AuctionStarted -> AuctionEnded -> Idle
+        # CollectingBids  => 'CollectingBids',
+        # AuctionStarted  => 'AuctionStarted',
+        # AuctionEnded    => 'AuctionEnded',
+        # Idle            => 'Idle',
+      },
+    ],
+  );
 
   return $self;
 }
 
 # (re-)initialisation
-# sub start {
-#   my $self = shift;
-#   $self->Idle();
-
-#   $self->test() if $self->{Test};
-# }
-
-sub players {
+sub start {
   my $self = shift;
-  my @players = keys %{$self->{bids}};
-  return \@players;
+  $self->Idle();
+
+  $self->test() if $self->{Test};
 }
 
-# sub PostReadConfig {
-#   my $self = shift;
-#   return if $self->{Port} == $self->{CurrentPort};
-#   if ( $self->{Listening} ) {
-#     $self->Log('Port has changed, stop/start listening');
-#     $self->StopListening();
-#   }
-#   $self->{CurrentPort} = $self->{Port};
-#   $self->StartListening();
-# }
+sub PostReadConfig {
+  my $self = shift;
+  return if $self->{Port} == $self->{CurrentPort};
+  if ( $self->{Listening} ) {
+    $self->Log('Port has changed, stop/start listening');
+    $self->StopListening();
+  }
+  $self->{CurrentPort} = $self->{Port};
+  $self->StartListening();
+}
 
-# # handle interaction with players
-# sub hello {
-#   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
+# handle interaction with players
+sub hello {
+  my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
 
-#   defined($args->{url}) or die "No url defined in message\n";
-#   defined($args->{player}) or die "No player defined in message\n";
-#   $self->{urls}{$args->{player}} = $args->{url};
-#   $self->{players}{$args->{url}} = $args->{player};
-#   $self->Log('Hello from ',$args->{player},' (',$args->{url},')');
-# # Send Auction parameters: Q, Epsilon, IdleTimeout...
-# }
+  defined($args->{url}) or die "No url defined in message\n";
+  defined($args->{player}) or die "No player defined in message\n";
+  $self->{urls}{$args->{player}} = $args->{url};
+  $self->{players}{$args->{url}} = $args->{player};
+  $self->Log('Hello from ',$args->{player},' (',$args->{url},')');
+# Send Auction parameters: Q, Epsilon, IdleTimeout...
+}
 
-# sub goodbye {
-#   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-#   $self->Log('Goodbye handler...');
-# }
+sub goodbye {
+  my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
+  $self->Log('Goodbye handler...');
+}
 
-# sub bid {
-#   my ($self,$kernel,$args,$player) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
-#   my ($p,$q,$t);
+sub bid {
+  my ($self,$kernel,$args,$player) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
+  my ($p,$q,$t);
 
-#   defined($p = $args->{p}) or die "No price defined in bid\n";
-#   defined($q = $args->{q}) or die "No quantity defined in bid\n";
-#   $self->Log("Bid from $player: (q=$q,p=$p)");
+  defined($p = $args->{p}) or die "No price defined in bid\n";
+  defined($q = $args->{q}) or die "No quantity defined in bid\n";
+  $self->Log("Bid from $player: (q=$q,p=$p)");
 
-#   $t = time();
-#   $self->RunPSP($player,[$q,$p,$t]);
-#   # $self->{bids}{$player} = [$q,$p,$t]; # Quantity, Price, Timeout...
-#   $self->{LastBidTime} = $t;
-#   # $kernel->yield('CollectingBids') if $self->{State} eq 'Idle';
-# }
+  $self->RunPSP($player,[$q,$p]);
+  $kernel->yield('SendOffer','offer');
+  # $self->{bids}{$player} = [$q,$p,$t]; # Quantity, Price, Timeout...
+  # $self->{LastBidTime} = $t;
+  # $kernel->yield('CollectingBids') if $self->{State} eq 'Idle';
+}
 
 # # handle my own FSM
 # sub Idle {
@@ -317,25 +311,6 @@ sub players {
 # #   return $cost;
 # # }
 
-# # sub RunPSP {
-# #   my $self = shift;
-# #   my ($player,$bid,$allocation,$cost);
-# # # Here I calculate the allocations!
-# #   $self->Log('RunPSP!');
-# #   $self->{LastRunTime} = time();
-
-# #   foreach $player ( @{$self->players()} ) {
-# #     next unless defined($bid = $self->{bids}{$player});
-# #     $self->Dbg('Player ',$player,' delta_t=',$self->{LastRunTime}-$bid->[TIMEOUT]);
-# #     next if ( $bid->[TIMEOUT] < $self->{LastRunTime} &&
-# #               defined($self->{allocation}{$player} ) );
-# #     print "\nRunPSP: $player\n";
-# #     $allocation = $self->allocation($player,$player);
-# #     $cost = $self->cost($player);
-# #     $self->{allocation}{$player} = [$allocation, $cost+$self->{Epsilon}];
-# #   }
-# # }
-
 # # sub test {
 # #   my $self = shift;
 # #   my ($i,$j);
@@ -397,93 +372,96 @@ sub players {
 # #   exit 0;
 # # }
 
-sub test {
-  my $self = shift;
-  $DB::single=1;
-  $self->RunPSP([70,3,'player1']); $self->showAllocations();
-  $self->RunPSP([60,6,'player2']); $self->showAllocations();
-  $self->RunPSP([50,4,'player3']); $self->showAllocations();
-  $self->RunPSP([40,5,'player4']); $self->showAllocations();
-  $self->RunPSP([55,9,'player5']); $self->showAllocations();
-  $self->RunPSP([80,3,'player6']); $self->showAllocations();
-
-  exit 0;
-}
-
 sub min {
   my ($x,$y) = @_;
   return $x if $x < $y;
   return $y;
 }
 
-sub showAllocations {
+sub showAuction {
   my $self = shift;
-  foreach my $player ( sort @{$self->players()} ) {
+  my @ordered = map {
+      $_->[PLAYER]
+    } sort {
+      $b->[PRICE] <=> $a->[PRICE]
+    } values %{$self->{bids}};
+
+  print " Player: Qty, Bid, Alloc, Cost\n";
+  foreach my $player ( @ordered ) {
     my $bid = $self->{bids}{$player};
-    print 'Allocation for ',$bid->[PLAYER],': ',$bid->[ALLOCATION],"\n";
+    print ' ',$bid->[PLAYER],': [',
+      $bid->[QUANTITY], ', ',
+      $bid->[PRICE], ', ',
+      $bid->[ALLOCATION], ', ',
+      (defined($bid->[COST]) ? $bid->[COST] : 'undef'),
+      "]\n";
   }
   print "\n";
 }
 
+sub Allocations {
+  my ($self,$bids,$omit) = @_;
+  my ($bid,$Qi,$i,$a);
+  $Qi = $self->{Q};
+  $omit = 0 unless defined $omit;
+
+  for ( $i=0; $i<scalar @{$bids}; $i++ ) {
+    $bid = $bids->[$i];
+    next if ( $omit && $omit eq $bid->[PLAYER] );
+    $a->{$bid->[PLAYER]} = min($Qi,$bid->[QUANTITY]);
+    $Qi -= $a->{$bid->[PLAYER]};
+    $Qi = 0 if $Qi < 0;
+  }
+  return $a;
+}
+
+sub test {
+  my $self = shift;
+  $DB::single=1;
+  $self->RunPSP([70,3,'player1']); $self->showAuction();
+  $self->RunPSP([60,6,'player2']); $self->showAuction();
+  $self->RunPSP([50,4,'player3']); $self->showAuction();
+  $self->RunPSP([40,5,'player4']); $self->showAuction();
+  $self->RunPSP([55,9,'player5']); $self->showAuction();
+  $self->RunPSP([80,3,'player6']); $self->showAuction();
+
+  exit 0;
+}
+
 sub RunPSP {
   my ($self,$newbid) = @_;
-  my ($player,$bids,@bids,$Qi,$ai,$ci,$bid);
-
+  my ($player,$bids,@bids,$Qi,$bid,$aj,$allocations);
   $self->{bids} = {} unless defined $self->{bids};
 
   $player = $newbid->[PLAYER];
   print "RunPSP: New bid: Player=$player, bid=[",$newbid->[QUANTITY],',',$newbid->[PRICE],"]\n";
 
-# Remove any previous bid by this same player, we will be replacing it...
   $bids = $self->{bids};
-  # delete $bids->{$player} if exists( $bids->{$player} );
   $bids->{$player} = $newbid;
 
-# Sort the bids by price-order
-  @bids = sort { $a->[PRICE] <=> $b->[PRICE] }  values %{$bids};
-  print "Sorted bids:\n";
-  print map { '  [' . join(', ',@{$_}) . "]\n" } @bids;
-  print "\n";
-
-  $Qi = $self->{Q};
-  $ai = $ci = 0;
-
-  foreach $bid ( @bids ) {
-    next if $bid->[PLAYER] eq $newbid->[PLAYER];
-    if ( $bid->[PRICE] >= $newbid->[PRICE] ) {
-      $Qi -= $bid->[QUANTITY];
-      if ( $Qi <= 0 ) {
-        $Qi = 0;
-        last;
-      }
-    }
+# Sort the bids by descending price-order
+  @bids = sort { $b->[PRICE] <=> $a->[PRICE] }  values %{$bids};
+  if ( $self->{DEBUG} ) {
+    print "Sorted bids:\n";
+    print map { '  [' . join(', ',@{$_}) . "]\n" } @bids;
+    print "\n";
   }
 
-# $newbid->[ALLOCATION] is 'A' in the algorithm as described in the patent
-  $newbid->[ALLOCATION] = $ai = min($Qi,$newbid->[QUANTITY]);
-  print "Allocation for new player = $ai = min($Qi,",$newbid->[QUANTITY],")\n";
+# Calculate the allocations for each player.
+  $allocations = $self->Allocations(\@bids);
+  map { $self->{bids}{$_}->[ALLOCATION] = $allocations->{$_} } keys %{$allocations};
+  print 'Allocation for ',$player,' = ',$newbid->[ALLOCATION],"\n";
 
-# Now the newbid has its quantity allocated. Bids with price less than the price
-# of the newbid still have their original allocations, which need to be adjusted.
-# The cost to all players below the newbid also need to be corrected.
-
-# First, calculate the new allocations for players who bid less than newbid...
-  $Qi = $self->{Q};
+# Now the quantities are allocated for all bids I can calculate the cost.
   foreach $bid ( @bids ) {
-    if ( $bid->[PRICE] >= $newbid->[PRICE] ) {
-      $Qi -= $bid->[ALLOCATION];
-      if ( $Qi < 0 ) { die " Qi = $Qi, how can this be???\n"; }
-    } else {
-      print "Total not yet allocated: $Qi\n";
-      $bid->[ALLOCATION] = min($Qi,$bid->[QUANTITY]);
+    $allocations = $self->Allocations(\@bids,$bid->[PLAYER]); # omit players in turn
+    $bid->[COST] = 0;
+    foreach ( keys %{$allocations} ) {
+      next if $_ eq $bid->[PLAYER];
+      $bid->[COST] += $self->{bids}{$_}[PRICE] *
+            ( $allocations->{$_} - $self->{bids}{$_}[ALLOCATION] );
     }
   }
-
-
-
-#-------------------------------------------
-  # $allocations = {};
-  # @players = @{$self->players()};
 }
 
 1;
