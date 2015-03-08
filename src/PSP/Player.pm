@@ -158,14 +158,14 @@ sub goodbye {
 sub offer {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
   my $offer = $args->{$self->{Me}};
-  $self->Log('Got offer: (a=',$offer->{q},',c=',$offer->{c},')');
-  $kernel->delay_set('SendBid',rand()*1.5);
+  $self->Log('Got offer: (a=',$offer->{a},',c=',$offer->{c},')');
+  $kernel->delay_set('SendBid',rand()*2.5);
 }
 
 sub allocation {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
   my $offer = $args->{$self->{Me}};
-  $self->Log('Got allocation: (a=',$offer->{q},',c=',$offer->{c},')');
+  $self->Log('Got allocation: (a=',$offer->{a},',c=',$offer->{c},')');
   $kernel->delay_set('SendBid',10+3*rand());
 
   $self->{NBids} = int( rand() * $self->{MaxBids} ) + 1;

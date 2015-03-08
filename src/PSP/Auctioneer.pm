@@ -18,7 +18,6 @@ use constant PRICE      => 1;
 use constant PLAYER     => 2;
 use constant ALLOCATION => 3;
 use constant COST       => 4;
-# use constant TIMEOUT  => 2;
 
 sub new {
   my $proto = shift;
@@ -50,8 +49,7 @@ sub new {
           EqTimeout      =>  15, # How long with no bids before declaring equilibrium?
           Epsilon        =>   5, # bid-fee
           Q              => 100, # How much of whatever I'm selling
-          TimeoutBids    =>   1, # Wait to gather more bids after one is received
-          TimeoutAuction =>   3, # How long with no bids to declare auction over?
+          AuctionTimeout =>   3, # How long with no bids to declare auction over?
         );
 
   $self = \%params;
@@ -90,32 +88,7 @@ sub new {
         ErrorHandler    => 'ErrorHandler',
 
         SendOffer       => 'SendOffer',
-
-# The FSM for the auction
-# The machine starts at Idle. When a bid comes in it switches to
-# CollectingBids for a few seconds. Then it goes to AuctionStarted.
-# In AuctionStarted it runs the auction and sends allocations,
-# re-running and sending if new bids come in within a certain
-# time-interval. After that it goes to AuctionEnded, which
-# does the final house-keeping, then back to Idle again.
-#
-# In CollectingBids and AuctionStarted, incoming bids are added to
-# the next or current auction. Any new bid will trigger a re-run of
-# the auction with the existing bid-set, including bids from players
-# who haven't re-bid once the auction has started.
-#
-# In AuctionStarted, the auctioneer sends 'offer' events to players.
-# Once the auction is complete, it sends a final 'allocation' event.
-#
-# In AuctionEnded, the final allocations are made, and the
-# existing set of bids are removed.
-#
-# Legal transitions are:
-# Idle -> CollectingBids -> AuctionStarted -> AuctionEnded -> Idle
-        # CollectingBids  => 'CollectingBids',
-        # AuctionStarted  => 'AuctionStarted',
-        # AuctionEnded    => 'AuctionEnded',
-        # Idle            => 'Idle',
+        AuctionEnded    => 'AuctionEnded',
       },
     ],
   );
@@ -126,7 +99,6 @@ sub new {
 # (re-)initialisation
 sub start {
   my $self = shift;
-  $self->Idle();
 
   if ( $self->{Test} ) {
     $self->test();
@@ -154,7 +126,7 @@ sub hello {
   $self->{urls}{$args->{player}} = $args->{url};
   $self->{players}{$args->{url}} = $args->{player};
   $self->Log('Hello from ',$args->{player},' (',$args->{url},')');
-# Send Auction parameters: Q, Epsilon, IdleTimeout...
+# TW Send Auction parameters: Q, Epsilon, AuctionTimeout...
 }
 
 sub goodbye {
@@ -171,71 +143,34 @@ sub bid {
   $self->Log("Bid from $player: (q=$q,p=$p)");
 
   $self->RunPSP([$q,$p,$player]);
-  $self->showAuction();
   $kernel->yield('SendOffer','offer');
-  # $self->{bids}{$player} = [$q,$p,$t]; # Quantity, Price, Timeout...
-  # $self->{LastBidTime} = $t;
-  # $kernel->yield('CollectingBids') if $self->{State} eq 'Idle';
+  $self->{LastBidTime} = time();
+  if ( !$self->{AuctionTimer} ) {
+    $self->Log("Set AuctionTimer");
+    $self->{AuctionTimer} = $kernel->delay_set(
+                              'AuctionEnded',
+                              $self->{AuctionTimeout}
+                            );
+  }
 }
 
-# handle my own FSM
-sub Idle {
+sub AuctionEnded {
   my ($self,$kernel) = @_[ OBJECT, KERNEL ];
-  $self->Log('State: Idle');
-  $self->{State} = 'Idle';
-  $self->{AuctionEndTime} = 0;
+
+  if ( $self->{LastBidTime} + $self->{AuctionTimeout} > time() ) {
+    # $self->Log("AuctionTimer: Auction not finished yet...");
+    # $self->Log("LastBid: ",$self->{LastBidTime},", timeout: ",$self->{AuctionTimeout},", time: ",time());
+    $self->{AuctionTimer} = $kernel->delay_set('AuctionEnded',1);
+    return;
+  }
+
+  $self->{AuctionTimer} = $self->{LastBidTime} = 0;
+  $self->Log("Auction finished!");
+  $kernel->call($self->{Me},'SendOffer','allocation');
   delete $self->{bids};
   delete $self->{allocation};
+  print "\n";
 }
-
-# sub CollectingBids {
-# #   my ($self,$kernel) = @_[ OBJECT, KERNEL ];
-# #   $self->Log('State: CollectingBids');
-# #   $self->{State} = 'CollectingBids';
-# #   $kernel->delay_set('AuctionStarted',$self->{TimeoutBids});
-# }
-
-# sub AuctionStarted {
-# #   my ($self,$kernel) = @_[ OBJECT, KERNEL ];
-# #   my ($player,$bid);
-# #   $self->Log('State: AuctionStarted');
-# #   $self->{State} = 'AuctionStarted';
-
-# #   if ( $self->{bids} ) {
-# #     $self->RunPSP();
-# #     $kernel->yield('SendOffer','offer');
-# #   }
-
-# # # Set timer for switching to AuctionEnded state
-# #   if ( ! $self->{AuctionRunning} ) {
-# #     $self->{AuctionRunning} = 1;
-# #     $kernel->delay_set('AuctionEnded',$self->{TimeoutAuction});
-# #   }
-# }
-
-# sub AuctionEnded {
-# # # Poll to see if the auction should be ended, or re-run
-# #   my ($self,$kernel) = @_[ OBJECT, KERNEL ];
-
-# #   if ( $self->{LastBidTime} >= $self->{LastRunTime} ) {
-# #     $self->RunPSP();
-# #     $kernel->yield('SendOffer','offer');
-# #     $kernel->delay_set('AuctionEnded',2);
-# #     return;
-# #   }
-
-# #   my $delta_t = time - $self->{LastRunTime};
-# #   if ( $delta_t < $self->{TimeoutAuction} ) {
-# #     $self->Log('State: AuctionEnded (no)');
-# #     $kernel->delay_set('AuctionEnded',2);
-# #   } else {
-# #     $self->Log('State: AuctionEnded (yes)');
-# #     $kernel->yield('SendOffer','allocation');
-# #     $kernel->yield('Idle');
-# #     $self->{State} = 'AuctionEnded';
-# #     $self->{AuctionRunning} = 0;
-# #   }
-# }
 
 sub SendOffer {
   my ($self,$kernel,$api) = @_[ OBJECT, KERNEL, ARG0 ];
@@ -244,15 +179,13 @@ sub SendOffer {
 
   foreach $player ( keys %{$self->{bids}} ) {
     $allocation->{$player} = {
-      q => $self->{bids}{$player}[QUANTITY],
+      a => $self->{bids}{$player}[ALLOCATION],
       c => $self->{bids}{$player}[COST]
     };
   }
   foreach $player ( sort keys %{$allocation} ) {
     $self->Dbg($Api,': ',$player,
-      ' (a=',$allocation->{$player}{q},
-      ',c=', $allocation->{$player}{c},
-      ')'
+      ' (a=',$allocation->{$player}{a},',c=', $allocation->{$player}{c},')'
     );
     my $response = $self->get({
           api    => $api,
@@ -260,7 +193,7 @@ sub SendOffer {
           target => $self->{urls}{$player} . $player . '/'
         });
     $self->Log($Api,': ',$player,
-      ' (a=',$allocation->{$player}{q},
+      ' (a=',$allocation->{$player}{a},
       ',c=', $allocation->{$player}{c},
       ') OK'
     );
@@ -283,7 +216,7 @@ sub showAuction {
       $b->[QUANTITY]   <=> $a->[QUANTITY]
     } values %{$self->{bids}};
 
-  print " Player: Qty, Bid, Alloc, Cost\n";
+  print "Auction results:\n Player: [ Qty, Bid, Alloc, Cost ]\n";
   foreach my $player ( @ordered ) {
     my $bid = $self->{bids}{$player};
     print ' ',$bid->[PLAYER],': [',
@@ -340,7 +273,6 @@ sub RunPSP {
 
   if ( $newbid ) {
     $player = $newbid->[PLAYER];
-    print "RunPSP: New bid: Player=$player, bid=[",$newbid->[QUANTITY],',',$newbid->[PRICE],"]\n";
     $bids->{$player} = $newbid;
   }
 
@@ -349,13 +281,11 @@ sub RunPSP {
   if ( $self->{Debug} ) {
     print "Sorted bids:\n";
     print map { '  [' . join(', ',@{$_}) . "]\n" } @bids;
-    print "\n";
   }
 
 # Calculate the allocations for each player.
   $allocations = $self->Allocations(\@bids);
   map { $self->{bids}{$_}->[ALLOCATION] = $allocations->{$_} } keys %{$allocations};
-  print 'Allocation for ',$player,' = ',$newbid->[ALLOCATION],"\n" if $newbid;
 
 # Now the quantities are allocated for all bids I can calculate the cost.
   foreach $bid ( @bids ) {
@@ -372,13 +302,6 @@ sub RunPSP {
 
 sub test {
   my $self = shift;
-
-  # $self->RunPSP([70,3,'player1']); $self->showAuction();
-  # $self->RunPSP([60,6,'player2']); $self->showAuction();
-  # $self->RunPSP([50,4,'player3']); $self->showAuction();
-  # $self->RunPSP([40,5,'player4']); $self->showAuction();
-  # $self->RunPSP([55,9,'player5']); $self->showAuction();
-  # $self->RunPSP([80,3,'player6']); $self->showAuction();
 
   print "1) 1 bidder, should get everything at no cost\n";
   $self->RunPSP([70, 7, 'player1' ]); $self->showAuction();
@@ -438,7 +361,6 @@ sub test {
       player4 => [ 0, 0 ],
     } );
 
-# four bidders, three with same price, exceeding the total:
   print "6) 4 bidders, 3 with same price, exceeds total Q\n";
   $self->{bids} = {
     "player1" => [15, 4, 'player1' ],
@@ -446,7 +368,6 @@ sub test {
     "player3" => [35, 4, 'player3' ],
     "player4" => [45, 5, 'player4' ],
   };
-$DB::single=1;
   $self->RunPSP(); $self->showAuction();
   $self->expect( {
       player1 => [  0,   0 ],
@@ -454,6 +375,15 @@ $DB::single=1;
       player3 => [ 15, 140 ],
       player4 => [ 45, 220 ],
     } );
+
+  print "\n\n";
+  $self->{bids} = {};
+  $self->RunPSP([70,3,'player1']); $self->showAuction();
+  $self->RunPSP([60,6,'player2']); $self->showAuction();
+  $self->RunPSP([50,4,'player3']); $self->showAuction();
+  $self->RunPSP([40,5,'player4']); $self->showAuction();
+  $self->RunPSP([55,9,'player5']); $self->showAuction();
+  $self->RunPSP([80,3,'player6']); $self->showAuction();
 
   exit 0;
 }
