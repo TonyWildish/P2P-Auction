@@ -118,4 +118,10 @@ sub get {
   die timestamp(), ": Got response ",$response->{_rc}," for url $url\n";
 }
 
+sub min {
+  my ($x,$y) = @_;
+  return $x if $x < $y;
+  return $y;
+}
+
 1;

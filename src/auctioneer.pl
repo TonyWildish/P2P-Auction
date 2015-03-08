@@ -2,6 +2,13 @@
 use strict;
 use Getopt::Long qw / :config pass_through/;
 use Data::Dumper;
+
+# sub POE::Kernel::TRACE_DEFAULT  () { 1 }
+# sub POE::Kernel::TRACE_EVENTS   () { 1 }
+# sub POE::Kernel::TRACE_SESSIONS () { 1 }
+# sub POE::Kernel::TRACE_DESTROY () { 1 }
+# sub POE::Kernel::TRACE_REFCNT () { 1 }
+
 use PSP::Util;
 use PSP::Auctioneer;
 
@@ -14,6 +21,8 @@ GetOptions(
     "test"      => \$args{test}  ,
     "config=s"  => \$args{config},
     "log=s"     => \$args{log},
+    "poetrace"  => \$args{poe_trace},
+    "poedebug"  => \$args{poe_debug},
     );
 
 sub usage {

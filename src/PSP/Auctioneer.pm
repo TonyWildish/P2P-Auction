@@ -33,7 +33,7 @@ sub new {
           Debug         => 0,
           Test          => undef,
           Pidfile       => undef,
-          ConfigPoll    => 3,
+          ConfigPoll    => 300,
 
 #         Manage the bidding machinery
           CurrentPort   => 0,
@@ -46,10 +46,12 @@ sub new {
           ],
 
 #         Parameters of the auction
-          EqTimeout      =>  15, # How long with no bids before declaring equilibrium?
           Epsilon        =>   5, # bid-fee
           Q              => 100, # How much of whatever I'm selling
-          AuctionTimeout =>   3, # How long with no bids to declare auction over?
+          AuctionTimeout =>   5, # How long with no bids to declare auction over?
+
+          POE_Trace      => 0,
+          POE_Debug      => 0,
         );
 
   $self = \%params;
@@ -91,7 +93,7 @@ sub new {
         AuctionEnded    => 'AuctionEnded',
       },
     ],
-  );
+  )->option( trace => $self->{POE_Trace}, debug => $self->{POE_Debug} );;
 
   return $self;
 }
@@ -121,8 +123,8 @@ sub PostReadConfig {
 sub hello {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
 
-  defined($args->{url}) or die "No url defined in message\n";
-  defined($args->{player}) or die "No player defined in message\n";
+  defined($args->{url}) or $self->ddie("No url defined in message",$args);
+  defined($args->{player}) or $self->ddie("No player defined in message",$args);
   $self->{urls}{$args->{player}} = $args->{url};
   $self->{players}{$args->{url}} = $args->{player};
   $self->Log('Hello from ',$args->{player},' (',$args->{url},')');
@@ -134,12 +136,18 @@ sub goodbye {
   $self->Log('Goodbye handler...');
 }
 
+sub ddie {
+  my ($self,$msg,$var) = @_;
+  print Dumper($var),"\n";
+  die $msg,"\n\n";
+}
+
 sub bid {
   my ($self,$kernel,$args,$player) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
   my ($p,$q,$t);
 
-  defined($p = $args->{p}) or die "No price defined in bid\n";
-  defined($q = $args->{q}) or die "No quantity defined in bid\n";
+  defined($p = $args->{p}) or $self->ddie("No price defined in bid",$args);
+  defined($q = $args->{q}) or $self->ddie("No quantity defined in bid",$args);
   $self->Log("Bid from $player: (q=$q,p=$p)");
 
   $self->RunPSP([$q,$p,$player]);
@@ -174,7 +182,7 @@ sub AuctionEnded {
 
 sub SendOffer {
   my ($self,$kernel,$api) = @_[ OBJECT, KERNEL, ARG0 ];
-  my ($allocation,$Api,$player);
+  my ($allocation,$Api,$player,$a);
   $Api = ucfirst $api;
 
   foreach $player ( keys %{$self->{bids}} ) {
@@ -184,27 +192,25 @@ sub SendOffer {
     };
   }
   foreach $player ( sort keys %{$allocation} ) {
-    $self->Dbg($Api,': ',$player,
-      ' (a=',$allocation->{$player}{a},',c=', $allocation->{$player}{c},')'
+    $a = $allocation->{$player};
+    $self->Dbg($Api,': ',$player,' (a=',$a->{a},',c=', $a->{c},')'
     );
     my $response = $self->get({
           api    => $api,
           data   => $allocation,
           target => $self->{urls}{$player} . $player . '/'
         });
-    $self->Log($Api,': ',$player,
-      ' (a=',$allocation->{$player}{a},
-      ',c=', $allocation->{$player}{c},
-      ') OK'
+    $self->Log($Api,': ',$player,' (a=',$a->{a},',c=', $a->{c},') OK'
     );
   }
 }
 
-sub min {
-  my ($x,$y) = @_;
-  return $x if $x < $y;
-  return $y;
-}
+# TW
+# sub min {
+#   my ($x,$y) = @_;
+#   return $x if $x < $y;
+#   return $y;
+# }
 
 sub showAuction {
   my $self = shift;
@@ -260,7 +266,7 @@ sub Allocations {
         last;
       }
     }
-    $a->{$bid_i->[PLAYER]} = min($Qi,$bid_i->[QUANTITY]);
+    $a->{$bid_i->[PLAYER]} = PSP::Util::min($Qi,$bid_i->[QUANTITY]);
   }
   return $a;
 }
@@ -297,6 +303,7 @@ sub RunPSP {
       $bid->[COST] += $self->{bids}{$_}[PRICE] *
             ( $allocations->{$_} - $self->{bids}{$_}[ALLOCATION] );
     }
+    $bid->[COST] += $self->{Epsilon} if $bid->[ALLOCATION];
   }
 }
 
@@ -306,7 +313,7 @@ sub test {
   print "1) 1 bidder, should get everything at no cost\n";
   $self->RunPSP([70, 7, 'player1' ]); $self->showAuction();
   $self->expect( {
-      player1 => [ 70, 0 ],
+      player1 => [ 70, $self->{Epsilon} ],
     } );
 
   print "2) 2 bidders, not exceeding total Q\n";
@@ -316,8 +323,8 @@ sub test {
   };
   $self->RunPSP(); $self->showAuction();
   $self->expect( {
-      player1 => [ 70, 0 ],
-      player2 => [ 30, 0 ],
+      player1 => [ 70, $self->{Epsilon} ],
+      player2 => [ 30, $self->{Epsilon} ],
     } );
 
   print "3) 2 bidders, same price, exceeds total Q\n";
@@ -327,8 +334,8 @@ sub test {
   };
   $self->RunPSP(); $self->showAuction();
   $self->expect( {
-      player1 => [ 40, 120 ],
-      player2 => [ 30, 120 ],
+      player1 => [ 40, 120 + $self->{Epsilon} ],
+      player2 => [ 30, 120 + $self->{Epsilon} ],
     } );
 
   print "4) 4 bidders, same price, exceeds total Q\n";
@@ -343,7 +350,7 @@ sub test {
       player1 => [  0,   0 ],
       player2 => [  0,   0 ],
       player3 => [  0,   0 ],
-      player4 => [ 10, 360 ],
+      player4 => [ 10, 360 + $self->{Epsilon} ],
     } );
 
   print "5) 4 bidders, same price, exceeds total Q\n";
@@ -371,20 +378,32 @@ sub test {
   $self->RunPSP(); $self->showAuction();
   $self->expect( {
       player1 => [  0,   0 ],
-      player2 => [  5, 140 ],
-      player3 => [ 15, 140 ],
-      player4 => [ 45, 220 ],
+      player2 => [  5, 140 + $self->{Epsilon} ],
+      player3 => [ 15, 140 + $self->{Epsilon} ],
+      player4 => [ 45, 220 + $self->{Epsilon} ],
     } );
 
-  print "\n\n";
-  $self->{bids} = {};
-  $self->RunPSP([70,3,'player1']); $self->showAuction();
-  $self->RunPSP([60,6,'player2']); $self->showAuction();
-  $self->RunPSP([50,4,'player3']); $self->showAuction();
-  $self->RunPSP([40,5,'player4']); $self->showAuction();
-  $self->RunPSP([55,9,'player5']); $self->showAuction();
-  $self->RunPSP([80,3,'player6']); $self->showAuction();
+  print "7) 2 bidders, same price, exceeds total Q\n";
+  $self->{bids} = {
+    "player1" => [ 100,   5, 'player1' ],
+    "player2" => [  60,   5, 'player2' ],
+  };
+  $self->RunPSP(); $self->showAuction();
+  $self->expect( {
+      player1 => [ 40, 300 + $self->{Epsilon} ],
+      player2 => [  0,   0 ],
+    } );
 
+  # print "\n\n";
+  # $self->{bids} = {};
+  # $self->RunPSP([70,3,'player1']); $self->showAuction();
+  # $self->RunPSP([60,6,'player2']); $self->showAuction();
+  # $self->RunPSP([50,4,'player3']); $self->showAuction();
+  # $self->RunPSP([40,5,'player4']); $self->showAuction();
+  # $self->RunPSP([55,9,'player5']); $self->showAuction();
+  # $self->RunPSP([80,3,'player6']); $self->showAuction();
+
+  print "\n ** Congratulations, all tests passed! **\n\n";
   exit 0;
 }
 
