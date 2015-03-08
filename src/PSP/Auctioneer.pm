@@ -58,14 +58,16 @@ sub new {
   map { $pLower{lc $_} = $_ } keys %params;
 
   bless $self, $class;
+
+  die "No --config file specified!\n" unless defined $args{config};
+  $self->ReadConfig($self->{Me},$args{config});
+
   foreach ( keys %args ) {
     if ( exists $pLower{lc $_} ) {
       $self->{$pLower{lc $_}} = delete $args{$_};
     }
   }
   map { $self->{$_} = $args{$_} if $args{$_} } keys %args;
-  die "No --config file specified!\n" unless defined $self->{Config};
-  $self->ReadConfig($self->{Me},$self->{Config});
 
   map { $self->{Handlers}{$_} = 1 } @{$self->{HandlerNames}};
 
@@ -126,7 +128,10 @@ sub start {
   my $self = shift;
   $self->Idle();
 
-  $self->test() if $self->{Test};
+  if ( $self->{Test} ) {
+    $self->test();
+    exit 0;
+  }
 }
 
 sub PostReadConfig {
@@ -236,7 +241,7 @@ sub SendOffer {
   my ($self,$kernel,$api) = @_[ OBJECT, KERNEL, ARG0 ];
   my ($allocation,$Api,$player);
   $Api = ucfirst $api;
-  $DB::single=1;
+
   foreach $player ( keys %{$self->{bids}} ) {
     $allocation->{$player} = {
       q => $self->{bids}{$player}[QUANTITY],
@@ -288,23 +293,33 @@ sub showAuction {
       (defined($bid->[COST]) ? $bid->[COST] : 'undef'),
       "]\n";
   }
-  print "\n";
 }
 
 sub Allocations {
   my ($self,$bids,$omit) = @_;
-  my ($bid_i,$bid_j,$Qi,$i,$j,$a);
-  $omit = 0 unless defined $omit;
+  my ($bid_i,$bid_j,$Qi,$i,$j,$a,$b);
 
-  for ( $i=0; $i<scalar @{$bids}; $i++ ) {
-    $bid_i = $bids->[$i];
+  if ( $omit ) {
+    $b = [];
+    foreach ( @{$bids} ) {
+      if ( $_->[PLAYER] eq $omit ) {
+        $a->{$_->[PLAYER] } = 0;
+        next;
+      }
+      push @{$b}, $_;
+    }
+  } else {
+    $b = $bids;
+  }
+
+  for ( $i=0; $i<scalar @{$b}; $i++ ) {
+    $bid_i = $b->[$i];
     $a->{$bid_i->[PLAYER]} = 0;
-    next if ( $omit && $omit eq $bid_i->[PLAYER] );
 
     $Qi = $self->{Q};
-    for ( $j=0; $j<scalar @{$bids}; $j++ ) {
+    for ( $j=0; $j<scalar @{$b}; $j++ ) {
       next if $i == $j;
-      $bid_j = $bids->[$j];
+      $bid_j = $b->[$j];
       last if $bid_j->[PRICE] < $bid_i->[PRICE];
       $Qi -= $bid_j->[QUANTITY];
       if ( $Qi <= 0 ) {
@@ -331,7 +346,7 @@ sub RunPSP {
 
 # Sort the bids by descending price-order
   @bids = sort { $b->[PRICE] <=> $a->[PRICE] }  values %{$bids};
-  if ( $self->{DEBUG} ) {
+  if ( $self->{Debug} ) {
     print "Sorted bids:\n";
     print map { '  [' . join(', ',@{$_}) . "]\n" } @bids;
     print "\n";
@@ -348,6 +363,7 @@ sub RunPSP {
     $bid->[COST] = 0;
     foreach ( keys %{$allocations} ) {
       next if $_ eq $bid->[PLAYER];
+      next unless $bid->[ALLOCATION];
       $bid->[COST] += $self->{bids}{$_}[PRICE] *
             ( $allocations->{$_} - $self->{bids}{$_}[ALLOCATION] );
     }
@@ -356,7 +372,7 @@ sub RunPSP {
 
 sub test {
   my $self = shift;
-  $DB::single=1;
+
   # $self->RunPSP([70,3,'player1']); $self->showAuction();
   # $self->RunPSP([60,6,'player2']); $self->showAuction();
   # $self->RunPSP([50,4,'player3']); $self->showAuction();
@@ -364,46 +380,105 @@ sub test {
   # $self->RunPSP([55,9,'player5']); $self->showAuction();
   # $self->RunPSP([80,3,'player6']); $self->showAuction();
 
-# A single player should get everything
-  # $self->RunPSP([70, 7, 'player1' ]); $self->showAuction();
+  print "1) 1 bidder, should get everything at no cost\n";
+  $self->RunPSP([70, 7, 'player1' ]); $self->showAuction();
+  $self->expect( {
+      player1 => [ 70, 0 ],
+    } );
 
-# two bidders with same price not exceeding the total: cost=0
-  # $self->{bids} = {
-  #   "player1" => [70, 7, 'player1' ],
-  #   "player2" => [30, 7, 'player2' ],
-  # };
-  # print " ==> expect cost=0 for both players\n";
-  # $self->RunPSP(); $self->showAuction();
+  print "2) 2 bidders, not exceeding total Q\n";
+  $self->{bids} = {
+    "player1" => [70, 7, 'player1' ],
+    "player2" => [30, 7, 'player2' ],
+  };
+  $self->RunPSP(); $self->showAuction();
+  $self->expect( {
+      player1 => [ 70, 0 ],
+      player2 => [ 30, 0 ],
+    } );
 
-# two bidders with same price, exceeding the total: cost=0
-  # $self->{bids} = {
-  #   "player1" => [70, 4, 'player1' ],
-  #   "player2" => [60, 4, 'player2' ],
-  # };
-  # print " ==> expect player1: (q=40,c=0), player2: (q=30,c=0)\n";
-  # $self->RunPSP(); $self->showAuction();
+  print "3) 2 bidders, same price, exceeds total Q\n";
+  $self->{bids} = {
+    "player1" => [70, 4, 'player1' ],
+    "player2" => [60, 4, 'player2' ],
+  };
+  $self->RunPSP(); $self->showAuction();
+  $self->expect( {
+      player1 => [ 40, 120 ],
+      player2 => [ 30, 120 ],
+    } );
 
-# four bidders with same price, exceeding the total: cost=0
-  # $self->{bids} = {
-  #   "player1" => [30, 4, 'player1' ],
-  #   "player2" => [40, 4, 'player2' ],
-  #   "player3" => [50, 4, 'player3' ],
-  #   "player4" => [60, 4, 'player4' ],
-  # };
-  # print " ==> expect (q=0,c=0) for all players\n";
-  # $self->RunPSP(); $self->showAuction();
+  print "4) 4 bidders, same price, exceeds total Q\n";
+  $self->{bids} = {
+    "player1" => [20, 4, 'player1' ],
+    "player2" => [30, 4, 'player2' ],
+    "player3" => [40, 4, 'player3' ],
+    "player4" => [50, 4, 'player4' ],
+  };
+  $self->RunPSP(); $self->showAuction();
+  $self->expect( {
+      player1 => [  0,   0 ],
+      player2 => [  0,   0 ],
+      player3 => [  0,   0 ],
+      player4 => [ 10, 360 ],
+    } );
+
+  print "5) 4 bidders, same price, exceeds total Q\n";
+  $self->{bids} = {
+    "player1" => [30, 4, 'player1' ],
+    "player2" => [40, 4, 'player2' ],
+    "player3" => [50, 4, 'player3' ],
+    "player4" => [60, 4, 'player4' ],
+  };
+  $self->RunPSP(); $self->showAuction();
+  $self->expect( {
+      player1 => [ 0, 0 ],
+      player2 => [ 0, 0 ],
+      player3 => [ 0, 0 ],
+      player4 => [ 0, 0 ],
+    } );
 
 # four bidders, three with same price, exceeding the total:
+  print "6) 4 bidders, 3 with same price, exceeds total Q\n";
   $self->{bids} = {
     "player1" => [15, 4, 'player1' ],
     "player2" => [25, 4, 'player2' ],
     "player3" => [35, 4, 'player3' ],
     "player4" => [45, 5, 'player4' ],
   };
-  print " ==> expect player1(q=0,c=0), player2(q=5,c=20), player3(q=15,c=140), player4(q=45,c=220),\n";
+$DB::single=1;
   $self->RunPSP(); $self->showAuction();
+  $self->expect( {
+      player1 => [  0,   0 ],
+      player2 => [  5, 140 ],
+      player3 => [ 15, 140 ],
+      player4 => [ 45, 220 ],
+    } );
 
   exit 0;
+}
+
+sub expect {
+  my ($self,$expect) = @_;
+  my ($player,$a,$c,$A,$C,$errors);
+  $errors = 0;
+
+  foreach $player ( keys %{$expect} ) {
+    $A = $self->{bids}{$player}[ALLOCATION];
+    $a = $expect->{$player}[0];
+    if ( $A != $a ) {
+      print "$player: found allocation = $A, expected $a\n";
+      $errors++;
+    }
+    $C = $self->{bids}{$player}[COST];
+    $c = $expect->{$player}[1];
+    if ( $C != $c ) {
+      print "$player: found cost = $C, expected $c\n";
+      $errors++;
+    }
+  }
+  die "\n *** Abort with $errors errors ***\n\n" if $errors;
+  print "OK!\n\n";
 }
 
 1;

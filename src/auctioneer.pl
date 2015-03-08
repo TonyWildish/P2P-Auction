@@ -33,10 +33,6 @@ EOF
 $args{help} && usage();
 
 my $auctioneer = new PSP::Auctioneer( %args, @ARGV );
-if ( $args{test} ) {
-  $auctioneer->test();
-  exit 0;
-}
 
 POE::Kernel->run();
 print "All done, outta here...\n";
