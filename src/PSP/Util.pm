@@ -3,11 +3,10 @@ use strict;
 use warnings;
 use POSIX;
 use POE;
-use JSON::XS;
 
-# use Data::Dumper;
-# $Data::Dumper::Terse=1;
-# $Data::Dumper::Indent=0;
+use Data::Dumper;
+$Data::Dumper::Terse=1;
+$Data::Dumper::Indent=0;
 
 sub Log { my $self=shift; print timestamp(), ' ', $self->{Me}, ': ', @_, "\n"; }
 sub Dbg { my $self=shift; $self->Log(@_) if $self->{Debug}; }
@@ -54,22 +53,6 @@ sub daemon {
   $|=1; # Flush output line-by-line
 }
 
-sub re_read_config {
-  my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
-  if ( defined($self->{mtime}) ) {
-    my $mtime = (stat($self->{Config}))[9];
-    if ( $mtime > $self->{mtime} ) {
-      $self->ReadConfig($self->{Me},$self->{Config});
-      $self->{mtime} = $mtime;
-      if ( $self->can('PostReadConfig') ) { $self->PostReadConfig(); }
-    }
-  } else {
-    $self->{mtime} = (stat($self->{Config}))[9] or 0;
-  }
-
-  $kernel->delay_set('re_read_config',$self->{ConfigPoll});
-}
-
 sub ReadConfig {
   my ($this,$hash,$file) = @_;
 
@@ -109,19 +92,46 @@ sub timestamp {
           $year,$month,$day,$hour,$minute,$seconds);
 }
 
-sub get {
-  my ($self,$h) = @_;
-  my $url = ($h->{target} || $self->{server}) . $h->{api};
-  if ( $h->{data} ) { $url .= '?' . encode_json($h->{data}); }
-  my $response = $self->{ua}->get($url);
-  return if $response->{_rc} == 200;
-  die timestamp(), ": Got response ",$response->{_rc}," for url $url\n";
-}
-
 sub min {
   my ($x,$y) = @_;
   return $x if $x < $y;
   return $y;
+}
+
+# POE session states
+sub _child {}
+sub _stop {}
+sub _default {
+  my ( $self, $kernel, $args ) = @_[ OBJECT, KERNEL, ARG1 ];
+  my $ref = ref($self);
+  if ( defined($args) ) {
+    $args = Dumper($args)
+  } else {
+    $args = '(null)';
+  }
+  die <<EOF;
+
+  Default handler for class $ref:
+  The default handler caught an unhandled "$_[ARG0]" event.
+  The $_[ARG0] event was given these parameters: $args
+
+  (...end of dump)
+EOF
+}
+
+sub _start {
+  my ( $self, $kernel, $session ) = @_[ OBJECT, KERNEL, SESSION ];
+  $kernel->alias_set($self->{Me});
+  $self->Log("Alias set to ",$self->{Me});
+  if ( $self->can('start') ) { $self->start(); }
+  if ( $self->can('PostReadConfig') ) { $self->PostReadConfig(); }
+  $kernel->state($_, $self) foreach @{$self->{HandlerNames}};
+}
+
+sub ddie {
+  my ($self,$msg,$var) = @_;
+  print Dumper($var),"\n";
+  die $self->{Me},': ',$msg,"\n\n";
 }
 
 1;

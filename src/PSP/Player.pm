@@ -2,12 +2,8 @@ package PSP::Player;
 use strict;
 use warnings;
 
-use HTTP::Status qw / :constants / ;
-use base 'PSP::Util', 'PSP::Session';
-use PSP::Listener;
+use base 'PSP::Util';
 use POE;
-use JSON::XS;
-use LWP::UserAgent;
 
 use Data::Dumper;
 $Data::Dumper::Terse=1;
@@ -22,26 +18,14 @@ sub new {
   %params = (
           Me            => __PACKAGE__,
           Config        => undef,
-          Log           => undef,
           Verbose       => 0,
           Debug         => 0,
           Test          => undef,
-          Pidfile       => undef,
-          ConfigPoll    => 300,
+          Auctioneer    => 'PSP::Auctioneer',
 
-#         Manage the bidding machinery
-          CurrentPort   => 0,
-          Port          => 3141,
-          Listening     => 0,
-          HandlerNames  => [
-            'hello',
-            'goodbye',
-            'offer',
-            'allocation',
-          ],
           NCycles       => 1,
 
-          Epsilon       => undef,  # bid-fee
+          Epsilon       => undef, # bid-fee
           Q             => undef, # How much of whatever is being sold
 
           Strategy      => 'Random',
@@ -64,8 +48,6 @@ sub new {
   die "No --name specified!\n" unless defined $self->{Me};
   $self->ReadConfig($self->{Me},$self->{Config});
 
-  map { $self->{Handlers}{$_} = 1 } @{$self->{HandlerNames}};
-
   $self->{Strategies} = {
     'Random'        => 'StrategyRandom',
     'Fixed'         => 'StrategyFixed',
@@ -79,21 +61,22 @@ sub new {
     $self->{Pidfile} =~ s%.log$%%;
     $self->{Pidfile} .= '.pid';
   }
-  $self->daemon() if $self->{Log};
+  # $self->daemon() if $self->{Log};
 
   POE::Session->create(
     object_states => [
       $self => {
-        _start          => '_start',
-        _stop           => '_stop',
-        _child          => '_child',
-        _default        => '_default',
-        re_read_config  => 're_read_config',
-        ContentHandler  => 'ContentHandler',
-        ErrorHandler    => 'ErrorHandler',
+        _start     => '_start',
+        _stop      => '_stop',
+        _child     => '_child',
+        _default   => '_default',
 
-        SendHello       => 'SendHello',
-        SendBid         => 'SendBid',
+        hello      => 'hello',
+        offer      => 'offer',
+        allocation => 'allocation',
+
+        SendHello  => 'SendHello',
+        SendBid    => 'SendBid',
       },
     ],
   )->option( trace => $self->{POE_Trace}, debug => $self->{POE_Debug} );;
@@ -112,12 +95,6 @@ sub start {
 
 sub PostReadConfig {
   my $self = shift;
-  return if $self->{Port} == $self->{CurrentPort};
-  if ( $self->{Listening} ) {
-    $self->Log('Port has changed, stop/start listening');
-    $self->StopListening();
-  }
-  $self->{CurrentPort} = $self->{Port};
 
   my $strategy = $self->{Strategies}{$self->{Strategy}};
   if ( !defined($strategy) ) {
@@ -129,17 +106,12 @@ sub PostReadConfig {
   if ( $self->{NBids} ) { $self->{MaxBids} = $self->{NBids}; }
   $self->{NBids} = $self->{MaxBids};
 
+# TW
 # Cheat by setting these from the config file.
 # Should really ask the auctioneer for them instead...
-  foreach ( qw / EqTimeout Epsilon Q / ) {
+  foreach ( qw / AuctionTimeout Epsilon Q / ) {
     $self->{$_} = $PSP::Auctioneer{$_};
   }
-  $self->StartListening();
-
-  $self->{server} = 'http://' .
-                    $self->{AuctioneerHost} . ':' .
-                    $self->{AuctioneerPort} . '/' .
-                    $self->{Me} . '/';
 
   $self->Log($self->{Me},': Start bidding!');
   POE::Kernel->yield('SendHello');
@@ -147,20 +119,17 @@ sub PostReadConfig {
 
 sub SendHello {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  my $data = {
-      player => $self->{Me},
-      url => 'http://' . $self->{Host} . ':' . $self->{Port} . '/'
-    };
-  my $response = $self->get( { api => 'hello', data => $data } );
-  $self->Log('SendHello... OK');
-  $self->Log('Start placing bids');
-  $kernel->yield('SendBid');
+
+  $self->Log('SendHello...');
+  $kernel->post($self->{Auctioneer},'hello',$self->{Me});
 }
 
 # Handlers for the interaction with the auctioneer
 sub hello {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  # $self->Log('Hello handler...');
+  $self->Log('Hello handler...');
+  $self->Log('Start bidding...');
+  $kernel->delay_set('SendBid',1.0);
 }
 
 sub goodbye {
@@ -172,7 +141,7 @@ sub offer {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
   my $offer = $args->{$self->{Me}};
   $self->Log('Got offer: (a=',$offer->{a},',c=',$offer->{c},')');
-  $kernel->delay_set('SendBid',rand()*2.5+1);
+  $kernel->delay_set('SendBid',1);
   $self->{allocation} = $args;
 }
 
@@ -182,10 +151,8 @@ sub allocation {
 
   $self->Log('Got allocation: (a=',$offer->{a},',c=',$offer->{c},')');
   $self->{NCycles}--;
-  if ( !$self->{NCycles} ) {
-    print "Game over :-)\n";
-    exit 0;
-  }
+  return unless $self->{NCycles};
+
   $kernel->delay_set('SendBid',10+3*rand());
   $self->{allocation} = $args;
 
@@ -193,7 +160,6 @@ sub allocation {
   print "\n";
 }
 
-# implement my own strategy
 sub SendBid {
   my ($self,$kernel) = @_[ OBJECT, KERNEL ];
   my ($bid,$response,$strategy);
@@ -205,9 +171,8 @@ sub SendBid {
 
   return unless $bid = $self->{StrategyHandler}->($self);
   $self->{Bid} = $bid;
-  $self->Dbg('Bid: (q=',$bid->{q},',p=',$bid->{p},')',' (NBids = ',$self->{NBids},')');
-  $response = $self->get({ api => 'bid', data => $bid });
-  $self->Log('Bid: (q=',$bid->{q},',p=',$bid->{p},')',' (NBids = ',$self->{NBids},') OK');
+  $kernel->post($self->{Auctioneer},'bid',$self->{Me},$bid);
+  $self->Log('Bid: (q=',$bid->{q},',p=',$bid->{p},')',' (NBids = ',$self->{NBids},')');
 }
 
 # Strategies...
@@ -256,9 +221,9 @@ sub StrategyOptimal {
   $qbar = $self->{Utility}->{qbar};
   $m    = PSP::Util::min($A,$qbar);
 
-  $theta = -$k * $m * $m / 2 + $k * $qbar * $m;
+  $theta = $k * $m * ($qbar - $m/2);
   $utility = $theta - $C;
-  $self->Log("(k=$k,qbar=$qbar), a=$A, c=$C, theta=$theta, utility=$utility");
+  $self->Dbg(sprintf("(k=$k,qbar=$qbar), a=%.1f, c=%.1f, theta=%.1f, utility=%.1f",$A,$C,$theta,$utility));
 
 # The truthful epsilon-best reply (q*,p*) has q* such that:
 # q+eps > theta'(q*) and q-eps < theta'(q*)
@@ -280,7 +245,6 @@ sub StrategyOptimal {
 # Qbar(y,s-i) = Q - sum [p>=y, k!=i] q_k
 
   $qmax = $cmax = $thetap = 0;
-  print Dumper($self->{allocation}),"\n";
   @players = sort {
     $self->{allocation}{$a}->{c} <=> $self->{allocation}{$b}->{c}
   } keys %{$self->{allocation}};
@@ -304,21 +268,27 @@ sub StrategyOptimal {
 
 # Deal with the edge-case...
   if ( $thetap >= $cmax ) {
-    # $self->Log("Deal with the edge case (theta'=$thetap, cmax=$cmax)");
+    $self->Log("Deal with the edge case (theta'=$thetap, cmax=$cmax)");
     $qstar = $qbar;
     $pstar = 0; # TW $self->{Epsilon};
   }
 
 # calculate the epsilon-best reply
-$DB::single=1;
   $qstar -= $self->{Epsilon}/($k * $qbar);
   $pstar = $k * ( $qbar - $qstar );
 
-$DB::single=1;
-  $self->Log("Optimal bid: (q=$qstar,p=$pstar)");
+  $qstar = int(1000 * $qstar) / 1000;
+  $pstar = int(1000 * $pstar) / 1000;
+  if ( $pstar < 1 ) { $pstar = 1; } # TW
+
   if ( $self->{Bid} &&
        $pstar == $self->{Bid}{p} &&
-       $qstar == $self->{Bid}{q} ) { return; }
+       $qstar == $self->{Bid}{q} ) {
+    $self->Log("Not submitting a new bid (q=$qstar,p=$pstar)");
+    return;
+  }
+
+  $self->Log("Optimal bid: (q=$qstar,p=$pstar)");
   return { p => $pstar, q => $qstar };
 }
 
@@ -376,6 +346,5 @@ sub expect {
   die "\n *** Abort with $errors errors ***\n\n" if $errors;
   print "OK!\n\n";
 }
-
 
 1;
