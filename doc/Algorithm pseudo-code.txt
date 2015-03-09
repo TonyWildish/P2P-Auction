@@ -24,6 +24,13 @@
    ** that should be 'i' and 'Si', not 'j' and 'Sj' ** ??
 
 12 Ci = Ci + Pj * ( min(qi,Qi) - min(qi,Qi-aj) )
+      Cost to i from j is Pj * the difference between (the amount allocated to i) and
+      the smaller of (the amount i wants and (the amount available at i minus the
+      allocation to j))
+   I think that should be...
+   Ci = Ci + Pj * ( min(qj,Qj) - min(qj,Qj-ai) )
+      Cost to i from j is Pj * the difference between (the amount allocated to j without i present) and the smaller of (the amount j wants and (the amount available at j minus the allocation to i))
+
    ai = ai - min(qi,aj)
 
 13 Identify next-higher Pj
