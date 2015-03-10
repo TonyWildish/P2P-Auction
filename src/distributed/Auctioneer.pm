@@ -300,9 +300,8 @@ sub RunPSP {
     foreach ( keys %{$allocations} ) {
       next if $_ eq $bid->[PLAYER];
       next unless $bid->[ALLOCATION];
-      next if $bid->[PRICE] <= $self->{bids}{$_}[PRICE];
-      $bid->[COST] += $self->{bids}{$_}[PRICE] *
-            ( $allocations->{$_} - $self->{bids}{$_}[ALLOCATION] );
+      $bid->[COST] += $bids->{$_}[PRICE] *
+            ( $allocations->{$_} - $bids->{$_}[ALLOCATION] );
     }
     $bid->[COST] += $self->{Epsilon} if $bid->[ALLOCATION];
   }

@@ -271,7 +271,7 @@ sub RunPSP {
 
 # Calculate the allocations for each player.
   $allocations = $self->Allocations(\@bids);
-  map { $self->{bids}{$_}->[ALLOCATION] = $allocations->{$_} } keys %{$allocations};
+  map { $bids->{$_}[ALLOCATION] = $allocations->{$_} } keys %{$allocations};
 
 # Now the quantities are allocated for all bids I can calculate the cost.
   foreach $bid ( @bids ) {
@@ -280,9 +280,8 @@ sub RunPSP {
     foreach ( keys %{$allocations} ) {
       next if $_ eq $bid->[PLAYER];
       next unless $bid->[ALLOCATION];
-      next if $bid->[PRICE] <= $self->{bids}{$_}[PRICE];
-      $bid->[COST] += $self->{bids}{$_}[PRICE] *
-            ( $allocations->{$_} - $self->{bids}{$_}[ALLOCATION] );
+      $bid->[COST] += $bids->{$_}[PRICE] *
+            ( $allocations->{$_} - $bids->{$_}[ALLOCATION] );
     }
     $bid->[COST] += $self->{Epsilon} if $bid->[ALLOCATION];
   }
@@ -291,89 +290,89 @@ sub RunPSP {
 sub test {
   my $self = shift;
 
-  # print "1) 1 bidder, should get everything at no cost\n";
-  # $self->RunPSP([70, 7, 'player1' ]); $self->showAuction();
-  # $self->expect( {
-  #     player1 => [ 70, $self->{Epsilon} ],
-  #   } );
+  print "1) 1 bidder, should get everything at no cost\n";
+  $self->RunPSP([70, 7, 'player1' ]); $self->showAuction();
+  $self->expect( {
+      player1 => [ 70, $self->{Epsilon} ],
+    } );
 
-  # print "2) 2 bidders, not exceeding total Q\n";
-  # $self->{bids} = {
-  #   "player1" => [70, 7, 'player1' ],
-  #   "player2" => [30, 7, 'player2' ],
-  # };
-  # $self->RunPSP(); $self->showAuction();
-  # $self->expect( {
-  #     player1 => [ 70, $self->{Epsilon} ],
-  #     player2 => [ 30, $self->{Epsilon} ],
-  #   } );
+  print "2) 2 bidders, not exceeding total Q\n";
+  $self->{bids} = {
+    "player1" => [70, 7, 'player1' ],
+    "player2" => [30, 7, 'player2' ],
+  };
+  $self->RunPSP(); $self->showAuction();
+  $self->expect( {
+      player1 => [ 70, $self->{Epsilon} ],
+      player2 => [ 30, $self->{Epsilon} ],
+    } );
 
-  # print "3) 2 bidders, same price, exceeds total Q\n";
-  # $self->{bids} = {
-  #   "player1" => [70, 4, 'player1' ],
-  #   "player2" => [60, 4, 'player2' ],
-  # };
-  # $self->RunPSP(); $self->showAuction();
-  # $self->expect( {
-  #     player1 => [ 40, 120 + $self->{Epsilon} ],
-  #     player2 => [ 30, 120 + $self->{Epsilon} ],
-  #   } );
+  print "3) 2 bidders, same price, exceeds total Q\n";
+  $self->{bids} = {
+    "player1" => [70, 4, 'player1' ],
+    "player2" => [60, 4, 'player2' ],
+  };
+  $self->RunPSP(); $self->showAuction();
+  $self->expect( {
+      player1 => [ 40, 120 + $self->{Epsilon} ],
+      player2 => [ 30, 120 + $self->{Epsilon} ],
+    } );
 
-  # print "4) 4 bidders, same price, exceeds total Q\n";
-  # $self->{bids} = {
-  #   "player1" => [20, 4, 'player1' ],
-  #   "player2" => [30, 4, 'player2' ],
-  #   "player3" => [40, 4, 'player3' ],
-  #   "player4" => [50, 4, 'player4' ],
-  # };
-  # $self->RunPSP(); $self->showAuction();
-  # $self->expect( {
-  #     player1 => [  0,   0 ],
-  #     player2 => [  0,   0 ],
-  #     player3 => [  0,   0 ],
-  #     player4 => [ 10, 360 + $self->{Epsilon} ],
-  #   } );
+  print "4) 4 bidders, same price, exceeds total Q\n";
+  $self->{bids} = {
+    "player1" => [20, 4, 'player1' ],
+    "player2" => [30, 4, 'player2' ],
+    "player3" => [40, 4, 'player3' ],
+    "player4" => [50, 4, 'player4' ],
+  };
+  $self->RunPSP(); $self->showAuction();
+  $self->expect( {
+      player1 => [  0,   0 ],
+      player2 => [  0,   0 ],
+      player3 => [  0,   0 ],
+      player4 => [ 10, 360 + $self->{Epsilon} ],
+    } );
 
-  # print "5) 4 bidders, same price, exceeds total Q\n";
-  # $self->{bids} = {
-  #   "player1" => [30, 4, 'player1' ],
-  #   "player2" => [40, 4, 'player2' ],
-  #   "player3" => [50, 4, 'player3' ],
-  #   "player4" => [60, 4, 'player4' ],
-  # };
-  # $self->RunPSP(); $self->showAuction();
-  # $self->expect( {
-  #     player1 => [ 0, 0 ],
-  #     player2 => [ 0, 0 ],
-  #     player3 => [ 0, 0 ],
-  #     player4 => [ 0, 0 ],
-  #   } );
+  print "5) 4 bidders, same price, exceeds total Q\n";
+  $self->{bids} = {
+    "player1" => [30, 4, 'player1' ],
+    "player2" => [40, 4, 'player2' ],
+    "player3" => [50, 4, 'player3' ],
+    "player4" => [60, 4, 'player4' ],
+  };
+  $self->RunPSP(); $self->showAuction();
+  $self->expect( {
+      player1 => [ 0, 0 ],
+      player2 => [ 0, 0 ],
+      player3 => [ 0, 0 ],
+      player4 => [ 0, 0 ],
+    } );
 
-  # print "6) 4 bidders, 3 with same price, exceeds total Q\n";
-  # $self->{bids} = {
-  #   "player1" => [15, 4, 'player1' ],
-  #   "player2" => [25, 4, 'player2' ],
-  #   "player3" => [35, 4, 'player3' ],
-  #   "player4" => [45, 5, 'player4' ],
-  # };
-  # $self->RunPSP(); $self->showAuction();
-  # $self->expect( {
-  #     player1 => [  0,   0 ],
-  #     player2 => [  5, 140 + $self->{Epsilon} ],
-  #     player3 => [ 15, 140 + $self->{Epsilon} ],
-  #     player4 => [ 45, 220 + $self->{Epsilon} ],
-  #   } );
+  print "6) 4 bidders, 3 with same price, exceeds total Q\n";
+  $self->{bids} = {
+    "player1" => [15, 4, 'player1' ],
+    "player2" => [25, 4, 'player2' ],
+    "player3" => [35, 4, 'player3' ],
+    "player4" => [45, 5, 'player4' ],
+  };
+  $self->RunPSP(); $self->showAuction();
+  $self->expect( {
+      player1 => [  0,   0 ],
+      player2 => [  5, 140 + $self->{Epsilon} ],
+      player3 => [ 15, 140 + $self->{Epsilon} ],
+      player4 => [ 45, 220 + $self->{Epsilon} ],
+    } );
 
-  # print "7) 2 bidders, same price, exceeds total Q\n";
-  # $self->{bids} = {
-  #   "player1" => [ 100,   5, 'player1' ],
-  #   "player2" => [  60,   5, 'player2' ],
-  # };
-  # $self->RunPSP(); $self->showAuction();
-  # $self->expect( {
-  #     player1 => [ 40, 300 + $self->{Epsilon} ],
-  #     player2 => [  0,   0 ],
-  #   } );
+  print "7) 2 bidders, same price, exceeds total Q\n";
+  $self->{bids} = {
+    "player1" => [ 100,   5, 'player1' ],
+    "player2" => [  60,   5, 'player2' ],
+  };
+  $self->RunPSP(); $self->showAuction();
+  $self->expect( {
+      player1 => [ 40, 300 + $self->{Epsilon} ],
+      player2 => [  0,   0 ],
+    } );
 
   # print "\n\n";
   # $self->{bids} = {};
@@ -395,8 +394,8 @@ sub test {
   $DB::single=1;
   print "price,quantity,utility,allocation,cost\n";
   my ($p,$q,$u);
-  for ( $p=0; $p<=15; $p++ ) {
-    for ( $q=0; $q<=100; $q+=2 ) {
+  for ( $p=0; $p<=20; $p++ ) {
+    for ( $q=0; $q<=100; $q+=5 ) {
       $self->RunPSP([$q,$p,'player4']);
       $u = 10 * $self->{bids}{player4}[ALLOCATION] - $self->{bids}{player4}[COST];
       print "$p,$q,$u,",$self->{bids}{player4}[ALLOCATION],',',$self->{bids}{player4}[COST],"\n";
