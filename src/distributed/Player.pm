@@ -245,15 +245,15 @@ sub StrategyOptimal {
   my (@players,$offer,$qmax,$qstar,$pstar,$cmax);
 
   $pstar = 0; # TW $self->{Epsilon};
-  $qstar = $self->{Utility}{qbar};
+  $qstar = $self->{Valuation}{qbar};
   if ( ! $self->{allocation} ) { return { q => $qstar, p => $pstar }; }
 
   $allocation = $self->{allocation}{$self->{Me}};
   $A = $allocation->{a};
   $C = $allocation->{c};
 
-  $k    = $self->{Utility}->{k};
-  $qbar = $self->{Utility}->{qbar};
+  $k    = $self->{Valuation}->{k};
+  $qbar = $self->{Valuation}->{qbar};
   $m    = PSP::Util::min($A,$qbar);
 
   $theta = -$k * $m * $m / 2 + $k * $qbar * $m;
@@ -335,7 +335,7 @@ sub test {
     player1 => { a => 30, c => $self->{Epsilon} },
     player2 => { a => 30, c => $self->{Epsilon} },
   };
-  $self->{Utility} = { k => 0.5, qbar => 70 };
+  $self->{Valuation} = { k => 0.5, qbar => 70 };
   $bid = $self->StrategyOptimal();
   $self->expect($bid,{ p => $self->{Epsilon}, q => 70 });
 
@@ -344,7 +344,7 @@ sub test {
     player1 => { a => 70, c => $self->{Epsilon} },
     player2 => { a => 30, c => $self->{Epsilon} },
   };
-  $self->{Utility} = { k => 0.5, qbar => 70 };
+  $self->{Valuation} = { k => 0.5, qbar => 70 };
   $bid = $self->StrategyOptimal();
   $self->expect($bid,{ p => $self->{Epsilon}, q => 70 });
 
@@ -353,7 +353,7 @@ sub test {
     player1 => { a => 70, c => $self->{Epsilon} },
     player2 => { a => 30, c => $self->{Epsilon} },
   };
-  $self->{Utility} = { k => 0.5, qbar => 80 };
+  $self->{Valuation} = { k => 0.5, qbar => 80 };
   $bid = $self->StrategyOptimal();
   $self->expect($bid,{ p => $self->{Epsilon}, q => 80 });
 

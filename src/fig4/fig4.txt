@@ -65,7 +65,7 @@ player4:
 p=1 -> allocation =        0
 p=2 -> allocation = min(q,20)
    for q < 20, cost = q
-  21 < q < 30, cost = 20+2*(q-20) = 2q-20
+  21 < q < 30, cost = 20+2*(q-20) = 2q-20 = 2(q-10)
   31 < q < 99, cost = 40
 
 p=3,4 -> allocation = min(q,30)
@@ -92,10 +92,3 @@ p>= 12 -> allocation = q
   31 < q < 50, cost = 4(q-20)
   51 < q < 70, cost = 7q-230
   71 < q < 99, cost = 260 + 12(q-70) = 12q-580
-
-      player1 => [ 100, 1, 'player1'],
-    player2 => [  10, 2, 'player2'],
-    player3 => [  20, 4, 'player3'],
-    player5 => [  20, 7, 'player5'],
-    player6 => [  30, 12, 'player6'],
-
