@@ -1,0 +1,56 @@
+- background
+- the problem
+ - what we want to achieve
+ - why fixed quotas don't work
+ - characteristics of a solution
+- the PSP auction
+ - how it works
+ - its characteristics
+ - bidding strategies
+- multi-link PSP
+ - how it compares to single-link PSP
+ - managing budgets
+- future work
+
+Background:
+-----------
+
+Experiments are trying to squeeze more and more performance from their CPUs, trying to optimise their use of disk-space. Finally also becoming aware of network as a resource that can be managed to their benefit.
+
+Run-1 approach was (initially) to distrust the network, eventually to ignore it because it worked so well.
+
+For Run-2, experiments want to exploit the network better, with scheduled transfers and more deterministic behaviour. Phrases like 'bandwidth guarantees' are used, but should be used with caution. Networks are responding by working towards letting experiments state their data-flow requirements and have the network configure itself to accomodate them.
+
+"With great power comes the potential for great abuse". All successful middleware goes through two phases: 1) make something possible for the first time, 2) prevent users from using too much of it. Networks are working towards providing virtual circuits or some sort of bandwidth guarantees (be they soft or hard). Now we need to consider how we share the network resources fairly.
+
+The problem:
+------------
+How do we share resources fairly? Should be as lightweight as possible, scalable, robust, etc etc etc...
+
+Fixed quotas don't work, our needs are not fixed, vary hour by hour if not faster. Need more dynamic mechanism, elastic, automatic, fair.
+
+System should not unreasonably penalise groups that do not take part, either because they have no recognition in the system or because they don't want or need to.
+
+We want:
+ - for the experiments to be able to tell the networks what their needs are at any given time, across the whole of LHCONE
+ - for LHCONE to be able to tell the experiments what they can have at that time, piece by piece
+ - a mechanism to resolve over-subscription of requests automatically, without putting the burden on LHCONE.
+ - a mechanism to implement the final decision. That's out of scope for this talk
+
+The PSP auction:
+----------------
+
+One solution to the competitive allocation of resources is an auction. Bidders decide among themselves who will pay how much for what, based on the rules of the auction. The vendor simply provides the resource and gives it to the winner once the auction is over. That's fine for a Van Gogh or a statue, but how do you auction bandwidth?
+
+Progressive Second Price Auction:
+---------------------------------
+bidders offer a (q,p) tuple for what they want. The PSP auctioneer works out the allocation based on the total bids, per link. Then calculates the price for each player, based on their allocations.
+
+PSP has an epsilon-Nash equilibrium which is fair, in that the optimal strategy for each player is to bid exactly what they want, not more, not less. Players have an incentive to take part in the auction if they want something more than they would get by default.
+
+Bidding strategies may vary, but an optimal bidding strategy exists, assuming you know how much you value a given slice of bandwidth on a given network route at a given time. If experiments can't work that out then they can't state a coherent requirement anyway.
+
+- multi-link PSP
+ - how it compares to single-link PSP
+ - managing budgets
+- future work

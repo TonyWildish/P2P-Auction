@@ -1,1 +1,12 @@
 for Markdown preview, CMD-shift-P 'Markdown Preview: in browser'
+
+bidding strategy with funny-money? Players will want to conserve budget if they are sharing the budget over multiple links, but not if they're bidding on a single link.
+
+So, how about this for the single-link case:
+1) bidders always bid their full budget for their target as a first bid
+2) when they get an allocation, if it's equal to their target, they stop
+3) if not,
+ 3a) if the price/unit is higher than they bid, they bid as much as they can at the price they're offered
+ 3b) if it's less than their bid price (can that happen?) they drop their bid and raise their price. But by how much?
+
+If they're bidding on multiple links they should apply this process to each link, which gives them a (q,p) vector for the links. Then, take links with higher q and shave their budget, allocating it to the links with lower q. It's essentially applying the same PSP algorithm to their own bidding strategy!
