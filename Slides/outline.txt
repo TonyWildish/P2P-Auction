@@ -50,7 +50,13 @@ PSP has an epsilon-Nash equilibrium which is fair, in that the optimal strategy 
 
 Bidding strategies may vary, but an optimal bidding strategy exists, assuming you know how much you value a given slice of bandwidth on a given network route at a given time. If experiments can't work that out then they can't state a coherent requirement anyway.
 
-- multi-link PSP
- - how it compares to single-link PSP
- - managing budgets
+How do we manage budgets? Can give a fresh budget every so often, either with carry-over of unused budget or not. If we allow carry-over there is an incentive to save budget, but this may tip the balance so far in the favour of one bidder that other bidders can't get a decent allocation. If we don't allow carry-over then there's no incentive to save budget, since it's not real money, so players may bid when they don't really need to.
+
+Multi-link PSP:
+---------------
+The PSP concept extends naturally to multiple links, and it can be shown that it keeps its properties
+
+Most difficult question is how to manage budgets? Given that there is no real money here, 
+
+
 - future work
