@@ -53,6 +53,7 @@ sub new {
     'Fixed'         => 'StrategyFixed',
     'Interactive'   => 'StrategyInteractive',
     'Optimal'       => 'StrategyOptimal',
+    'SpendBudget'   => 'StrategySpendBudget',
     'List'          => 'StrategyList',
   };
 
@@ -129,7 +130,7 @@ sub hello {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
   $self->Log('Hello handler...');
   $self->Log('Start bidding...');
-  $kernel->delay_set('SendBid',1.0);
+  $kernel->delay_set('SendBid',0.1);
 }
 
 sub goodbye {
@@ -140,8 +141,8 @@ sub goodbye {
 sub offer {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
   my $offer = $args->{$self->{Me}};
-  $self->Log('Got offer: (a=',$offer->{a},',c=',$offer->{c},')');
-  $kernel->delay_set('SendBid',1);
+  $self->Log('Got offer: ',$self->allocstr($offer->{c},$offer->{a}));
+  $kernel->delay_set('SendBid',0.1);
   $self->{allocation} = $args;
 }
 
@@ -149,7 +150,11 @@ sub allocation {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
   my $offer = $args->{$self->{Me}};
 
-  $self->Log('Got allocation: (a=',$offer->{a},',c=',$offer->{c},')');
+  $self->Log('Got allocation: ',$self->allocstr($offer->{c},$offer->{a}),);
+  $self->Log('target=',$self->{Valuation}{target},',',
+             'budget=',$self->{Valuation}{budget},',',
+             'allocation=',$offer->{a},',',
+             'cost=',$offer->{c}*$offer->{a},"\n");
   $self->{NCycles}--;
   return unless $self->{NCycles};
 
@@ -172,7 +177,7 @@ sub SendBid {
   return unless $bid = $self->{StrategyHandler}->($self);
   $self->{Bid} = $bid;
   $kernel->post($self->{Auctioneer},'bid',$self->{Me},$bid);
-  $self->Log('Bid: (q=',$bid->{q},',p=',$bid->{p},')',' (NBids = ',$self->{NBids},')');
+  $self->Log('Bid: ',$self->bidstr($bid->{p},$bid->{q}),' (NBids = ',$self->{NBids},')');
 }
 
 # Strategies...
@@ -290,6 +295,82 @@ sub StrategyOptimal {
 
   $self->Log("Optimal bid: (q=$qstar,p=$pstar)");
   return { p => $pstar, q => $qstar };
+}
+
+sub bidstr {
+  my ($self,$p,$q) = @_;
+  return sprintf("(p=%.3f,q=%.3f)",$p,$q);
+}
+sub allocstr {
+  my ($self,$c,$a) = @_;
+  return sprintf("(c=%.3f,a=%.3f)",$c,$a);
+}
+
+sub StrategySpendBudget {
+  my $self = shift;
+  my ($budget,$target,$allocation);
+  my ($delta,$q,$p,$tolerance,$eta,$qstar,$pstar);
+
+  $target    = $self->{Valuation}{target};
+  $budget    = $self->{Valuation}{budget};
+  $tolerance = $self->{Valuation}{tolerance};
+  $tolerance = 0.05 unless $tolerance;
+  $eta       = $self->{Valuation}{eta};
+  $eta       = 0.2 unless $eta;
+
+  if ( ! $self->{allocation} ) {
+    $qstar = $target;
+    $pstar = $target / $budget;
+    $self->Log("SpendBudget: initial bid: ",$self->bidstr($pstar,$qstar));
+    $self->{bid} = { q => $qstar, p => $pstar };
+    return $self->{bid};
+  }
+
+  $q = $self->{allocation}{$self->{Me}}{a};
+  $p = $self->{allocation}{$self->{Me}}{c};
+
+# 1) if the price is above my budget, bid this allocation but at my budget
+  if ( $q*$p > $budget ) {
+    $self->Log('Price is out of my budget');
+    $self->{bid} = { q => $q, p => $budget/$p };
+    return $self->{bid};
+  }
+
+# 2) if I got more than I asked for, stay put
+  if ( $q >= $target ) {
+    $self->Log("Woo-hoo, jackpot! Staying put...");
+    return;
+  }
+
+# 3) If I'm close to the target, take it.
+  $delta = ($target - $q) / $target;
+  if ( $delta < $tolerance ) { # $delta is positive, by 2)...
+    $self->Log("This is close enough ($delta)");
+    return;
+  }
+
+# 4) if I'm close to my last bid, settle for that, but only if
+# the cost is non-zero. If it's zero, I can probably do better.
+  $delta = ( $self->{bid}{q} - $q ) / $self->{bid}{q};
+  if ( abs($delta) <= $tolerance && $p > 0 ) {
+    $self->Log("I'm happy with my allocation, staying put...");
+    return;
+  }
+
+# 5) try to get closer to my target by closing the gap by some
+# fixed fraction of the distance between the offer and the target
+# However, if this doesn't change my bid by some small amount, give up
+  $qstar = $q * (1-$eta) + $target * $eta;
+  $pstar = $budget / $qstar;
+  $delta = abs( $qstar - $q ) / $q;
+  if ( $delta < $tolerance ) {
+    $self->Log("Seems I can't do any better :-(");
+    return;
+  }
+
+  $self->{bid} = { q => $qstar, p => $pstar };
+  $self->Log("SpendBudget bid: ",$self->bidstr($pstar,$qstar));
+  return $self->{bid};
 }
 
 sub test {

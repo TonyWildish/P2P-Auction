@@ -39,9 +39,15 @@ where
   --config <string>   specifies a config file
   --log <string>      specifies a logfile
 
+  --player <string>   name the players! Can (should!) be multiple
+
 EOF
 }
 $args{help} && usage();
+
+if ( ! scalar @players ) {
+  die "No players? No dice!\n";
+}
 
 $auctioneer = new PSP::Auctioneer( %args );
 foreach $player ( @players ) {
