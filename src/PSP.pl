@@ -13,7 +13,7 @@ use PSP::Util;
 use PSP::Auctioneer;
 use PSP::Player;
 
-my (%args,$auctioneer,$player,@players,%players);
+my (%args,$auctioneer,$player,@players,%players,%auction);
 
 GetOptions(
     "help"      => \$args{help},
@@ -48,6 +48,12 @@ $args{help} && usage();
 if ( ! scalar @players ) {
   die "No players? No dice!\n";
 }
+
+# if ( $args{log} ) {
+#   print "Writing output to ",$args{log},"\n";
+#   open STDOUT, ">>$args{log}" or die "Cannot open logfile ",$args{log},": $!\n";
+#   $| = 1;
+# }
 
 $auctioneer = new PSP::Auctioneer( %args );
 foreach $player ( @players ) {

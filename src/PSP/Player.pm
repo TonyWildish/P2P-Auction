@@ -76,8 +76,9 @@ sub new {
         offer      => 'offer',
         allocation => 'allocation',
 
-        SendHello  => 'SendHello',
-        SendBid    => 'SendBid',
+        SendHello     => 'SendHello',
+        StartBidding  => 'StartBidding',
+        SendBid       => 'SendBid',
       },
     ],
   )->option( trace => $self->{POE_Trace}, debug => $self->{POE_Debug} );;
@@ -107,30 +108,38 @@ sub PostReadConfig {
   if ( $self->{NBids} ) { $self->{MaxBids} = $self->{NBids}; }
   $self->{NBids} = $self->{MaxBids};
 
-# TW
-# Cheat by setting these from the config file.
-# Should really ask the auctioneer for them instead...
-  foreach ( qw / AuctionTimeout Epsilon Q / ) {
-    $self->{$_} = $PSP::Auctioneer{$_};
-  }
-
   $self->Log($self->{Me},': Start bidding!');
-  POE::Kernel->yield('SendHello');
+  POE::Kernel->yield('StartBidding');
 }
 
 sub SendHello {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
 
   $self->Log('SendHello...');
-  $kernel->post($self->{Auctioneer},'hello',$self->{Me});
+  $kernel->post($self->{Auctioneer},'hello',$self->{Me},$self->{Valuation});
 }
 
 # Handlers for the interaction with the auctioneer
+sub StartBidding { # re-start a game!
+  my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
+  my $hash = $self->{Me};
+
+  delete $self->{allocation};
+  no strict 'refs';
+  my $nkeys = scalar keys %$hash;
+  map { $self->{$_} = $hash->{$_} } keys %$hash;
+  $kernel->post($self->{Auctioneer},'hello',$self->{Me},$self->{Valuation});
+
+  $self->Log('Start bidding...');
+  $kernel->delay_set('SendBid',0.3);
+}
+
 sub hello {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
-  $self->Log('Hello handler...');
-  $self->Log('Start bidding...');
-  $kernel->delay_set('SendBid',0.1);
+
+  foreach ( keys %{$args} ) {
+    $self->{$_} = $args->{$_};
+  }
 }
 
 sub goodbye {
@@ -142,7 +151,7 @@ sub offer {
   my ($self,$kernel,$args) = @_[ OBJECT, KERNEL, ARG0 ];
   my $offer = $args->{$self->{Me}};
   $self->Log('Got offer: ',$self->allocstr($offer->{c},$offer->{a}));
-  $kernel->delay_set('SendBid',0.1);
+  $kernel->delay_set('SendBid',0.3);
   $self->{allocation} = $args;
 }
 
@@ -151,14 +160,10 @@ sub allocation {
   my $offer = $args->{$self->{Me}};
 
   $self->Log('Got allocation: ',$self->allocstr($offer->{c},$offer->{a}),);
-  $self->Log('target=',$self->{Valuation}{target},',',
-             'budget=',$self->{Valuation}{budget},',',
-             'allocation=',$offer->{a},',',
-             'cost=',$offer->{c}*$offer->{a},"\n");
   $self->{NCycles}--;
   return unless $self->{NCycles};
 
-  $kernel->delay_set('SendBid',10+3*rand());
+  $kernel->delay_set('SendBid',0.3);
   $self->{allocation} = $args;
 
   $self->{NBids} = int( rand() * $self->{MaxBids} ) + 1;
@@ -318,22 +323,25 @@ sub StrategySpendBudget {
   $eta       = $self->{Valuation}{eta};
   $eta       = 0.2 unless $eta;
 
+# If my target is zero, don't bid!
+  return unless $target;
+
+# If this is my first bid, bid for everything at full price
   if ( ! $self->{allocation} ) {
     $qstar = $target;
-    $pstar = $target / $budget;
+    $pstar = $budget / $target;
     $self->Log("SpendBudget: initial bid: ",$self->bidstr($pstar,$qstar));
-    $self->{bid} = { q => $qstar, p => $pstar };
-    return $self->{bid};
+    return { q => $qstar, p => $pstar };
   }
 
   $q = $self->{allocation}{$self->{Me}}{a};
   $p = $self->{allocation}{$self->{Me}}{c};
 
-# 1) if the price is above my budget, bid this allocation but at my budget
+# 1) if the price is above my budget, bid 90% of this allocation but at my budget
   if ( $q*$p > $budget ) {
     $self->Log('Price is out of my budget');
-    $self->{bid} = { q => $q, p => $budget/$p };
-    return $self->{bid};
+    $q *= 0.9;
+    return { q => $q, p => $budget/$p };
   }
 
 # 2) if I got more than I asked for, stay put
@@ -349,28 +357,37 @@ sub StrategySpendBudget {
     return;
   }
 
-# 4) if I'm close to my last bid, settle for that, but only if
-# the cost is non-zero. If it's zero, I can probably do better.
-  $delta = ( $self->{bid}{q} - $q ) / $self->{bid}{q};
+# 4) if I'm close to my last bid, settle for that, but only if the
+# cost is non-zero. If the cost is zero I should up the price.
+  $delta = ( $self->{Bid}{q} - $q ) / $self->{Bid}{q};
   if ( abs($delta) <= $tolerance && $p > 0 ) {
     $self->Log("I'm happy with my allocation, staying put...");
     return;
   }
 
-# 5) try to get closer to my target by closing the gap by some
+# 5) if I get zero allocation, bid 1/10th of my allocation instead
+  if ( !$q ) {
+    $qstar = $target / 10;
+    $pstar = $budget / $qstar;
+    $self->Log("Got nothing! Aim low...: ",$self->bidstr($pstar,$qstar));
+    return { q => $qstar, p => $pstar };
+  }
+
+# 6) try to get closer to my target by closing the gap by some
 # fixed fraction of the distance between the offer and the target
 # However, if this doesn't change my bid by some small amount, give up
+# However (again), try anyway if my price was zero last time.
   $qstar = $q * (1-$eta) + $target * $eta;
   $pstar = $budget / $qstar;
   $delta = abs( $qstar - $q ) / $q;
-  if ( $delta < $tolerance ) {
+  if ( $delta < $tolerance && $p ) {
     $self->Log("Seems I can't do any better :-(");
+    $self->Log("pstar=$pstar, qstar=$qstar, p=$p, q=$q, delta=$delta, tolerance=$tolerance, budget=$budget");
     return;
   }
 
-  $self->{bid} = { q => $qstar, p => $pstar };
   $self->Log("SpendBudget bid: ",$self->bidstr($pstar,$qstar));
-  return $self->{bid};
+  return { q => $qstar, p => $pstar };
 }
 
 sub test {

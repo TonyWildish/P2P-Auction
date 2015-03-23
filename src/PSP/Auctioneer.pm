@@ -57,6 +57,7 @@ sub new {
   map { $self->{$_} = $args{$_} if $args{$_} } keys %args;
   map { $self->{Handlers}{$_} = 1 } @{$self->{HandlerNames}};
   $self->{LastRunPSPTime} = 0;
+  $self->{NCycles} = 0;
 
   if ( $self->{Log} && ! $self->{Pidfile} ) {
     $self->{Pidfile} = $self->{Log};
@@ -79,6 +80,8 @@ sub new {
         SendOffer       => 'SendOffer',
         AuctionStart    => 'AuctionStart',
         AuctionEnded    => 'AuctionEnded',
+        NewAuction      => 'NewAuction',
+        TakingTooLong   => 'TakingTooLong',
       },
     ],
   )->option( trace => $self->{POE_Trace}, debug => $self->{POE_Debug} );;
@@ -96,21 +99,19 @@ sub start {
   }
 }
 
-# sub PostReadConfig {
-#   my $self = shift;
-# }
-
 # handle interaction with players
 sub hello {
-  my ($self,$kernel,$player) = @_[ OBJECT, KERNEL, ARG0 ];
+  my ($self,$kernel,$player,$valuation) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
 
   $self->{players}{$player}++;
+  $self->{valuation}{$player} = $valuation;
+  $self->{StartTime} = time();
   $self->Log('Hello from ',$player);
   $kernel->post($player,'hello',{
       AuctionTimeout => $self->{AuctionTimeout},
       Epsilon        => $self->{Epsilon},
       Q              => $self->{Q},
-    })
+    });
 }
 
 sub goodbye {
@@ -129,6 +130,7 @@ sub bid {
 
   $self->{bids}{$player} = [ $q, $p, $player ];
   $self->{LastBidTime} = time();
+  $self->{StartTime} = time() unless $self->{StartTime};
   $kernel->delay_set('AuctionStart',$self->{BiddingTimeout});
 }
 
@@ -163,7 +165,9 @@ sub AuctionStart {
 
 sub AuctionEnded {
   my ($self,$kernel) = @_[ OBJECT, KERNEL ];
+  my ($player,$p,$a,$v,$file);
 
+  $kernel->delay('AuctionStart');
   if ( $self->{LastBidTime} + $self->{AuctionTimeout} > time() ) {
     $self->{AuctionTimer} = $kernel->delay_set('AuctionEnded',1);
     return;
@@ -172,9 +176,75 @@ sub AuctionEnded {
   $self->{AuctionTimer} = $self->{LastBidTime} = 0;
   $self->Log("Auction finished!");
   $kernel->call($self->{Me},'SendOffer','allocation');
+
+# Report the results for further analysis
+  foreach $player ( keys %{$self->{bids}} ) {
+    $a = $self->{bids}{$player};
+    $v = $self->{valuation}{$player};
+    print "Result: ",
+          $player,",",
+          $a->[ALLOCATION],",",
+          $a->[COST],",",
+          $v->{target},",",
+          $v->{budget},
+          "\n";
+  }
+
+  $file = $PSP::Game{results};
+  if ( $file ) {
+    if ( ! -f $file ) {
+      open OUT, ">$file" or die "open $file: $!\n";
+      print OUT "NCycles,Time";
+      foreach $player ( sort keys %{$self->{bids}} ) {
+        $p = $player;
+        $p =~ s%^.*:%%;
+        print OUT ',',join(',',
+              map { $p . '.' . $_ } qw ( allocation cost target budget )
+            );
+      }
+      print OUT "\n";
+      close OUT;
+    }
+    open OUT, ">>$file" or die "open $file: $!\n";
+    print OUT $self->{NCycles},',',time()-$self->{StartTime};
+    foreach $player ( sort keys %{$self->{bids}} ) {
+      $a = $self->{bids}{$player};
+      $v = $self->{valuation}{$player};
+      print OUT ',',
+                $a->[ALLOCATION],",",
+                $a->[COST],",",
+                $v->{target},",",
+                $v->{budget};
+    }
+    print OUT "\n";
+    close OUT;
+  }
+
   delete $self->{bids};
-# TW  # delete $self->{allocation};
+  delete $self->{StartTime};
+
   print "\n";
+  $kernel->delay_set('NewAuction',8);
+}
+
+sub NewAuction {
+  my ($self,$kernel) = @_[ OBJECT, KERNEL ];
+  print "Start a new auction?\n";
+
+  if ( $PSP::Game{next_auction}() ) {
+    foreach ( keys %{$self->{players}} ) {
+      print "Tell $_ to start bidding\n";
+      $kernel->post($_,'StartBidding')
+    }
+  }
+  $kernel->alarm('TakingTooLong',time()+120);
+}
+
+sub TakingTooLong {
+  my ($self,$kernel) = @_[ OBJECT, KERNEL ];
+  $self->Log("This is taking too long, must be something wrong. Abandon...\n\n");
+  exit(0);
+  $kernel->post('AuctionEnded');
 }
 
 sub SendOffer {
@@ -258,6 +328,7 @@ sub RunPSP {
   my ($self,$newbid) = @_;
   my ($bids,@bids,$Qi,$bid,$aj,$allocations);
 
+  $self->{NCycles}++;
   $self->{bids} = {} unless defined $self->{bids};
   $bids = $self->{bids};
   $bids->{$newbid->[PLAYER]} = $newbid if $newbid;
@@ -391,7 +462,7 @@ sub test {
     player5 => [  20,  7, 'player5'],
     player6 => [  30, 12, 'player6'],
   };
-  $DB::single=1;
+
   print "price,quantity,utility,allocation,cost\n";
   my ($p,$q,$u);
   for ( $p=0; $p<=20; $p++ ) {
