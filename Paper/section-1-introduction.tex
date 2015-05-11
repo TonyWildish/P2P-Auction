@@ -1,4 +1,7 @@
 \section{Introduction}
 
-blah blah blah
-waffle waffle waffle
+Run-1 of LHC was a great success for the LHC experiments. The experiments ran their computing systems according to the models they had developed and refined over many years, going back as far as the original MONARC\cite{MONARC} models with highly segregated network traffic between sites. The Tier-0 would transfer only to Tier-1 sites, which would forward data to Tier-2 sites for analysis. Any Tier-2 that wanted data from another Tier-2 would often have to wait for the data to be staged from the source via Tier-1 intermediaries, since direct Tier-2 to Tier-2 transfers were not allowed.
+
+The network played little direct part in those models. In the days before the WLCG grid\cite{WLCG} was established, the network was considered to be an unreliable component, hard to debug when it failed, and a limiting factor for the overall performance of the system. Instead, before and during Run-1, the network turned out to be one of the most reliable and performant components of the grid. Bandwidths available to the experiments were much higher than originally anticipated, and transfer failures were almost invariable associated with a site rather than with the network fabric, and were therefore easily diagnosed.
+
+As a result, the LHC experiments relaxed their computing models to allow transfers between any pair of sites. Tier-2 to Tier-2 transfers accounted for 1/6 of the total network traffic for CMS, for example. Both ATLAS and CMS have created data-federations, based on xrootd\cite{xrootd}, to allow analysis jobs running on any worker node to fall-back to fetching data from any storage element that hosts it, wherever it might be. This extra flexibility in transfers and data-access has had a major impact on the abilities of the experiments to produce physics results, and is expected to be an important component of Run-2.
