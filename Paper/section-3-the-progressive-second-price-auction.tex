@@ -1,4 +1,13 @@
 \section{The Progressive Second Price Auction}
 
-blah blah blah
-waffle waffle waffle
+The Progressive Second Price Auction (PSP auction)\cite{PSP} is specifically designed for allocating network bandwidth, and can form the core of a system that satisfies the requirements outlined above. The basic procedure works as follows:
+
+\begin{enumerate}
+\item[1)] The network offers a quantity {\bf Q} of bandwidth on a given network link
+\item[2)] Bidders have a given budget, not necessarily the same among bidders
+\item[3)] Bidders specify their bids in the form of a (quantity,unit-price) pair, (${\bf q_i}$,${\bf p_i}$)
+\item[4)] The PSP algorithm calculates the allocation and total cost for each bidder, (${\bf a_i}$,${\bf c_i}$)
+\item[5)] PSP sends all allocations and costs to all bidders
+\item[6)] Bidders revise their bids if they aren't satisfied, and resubmit them
+\item[7)] Steps 3-6 are repeated until convergence.
+\end{enumerate}

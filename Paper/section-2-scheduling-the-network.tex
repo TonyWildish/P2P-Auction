@@ -1,4 +1,17 @@
 \section{Scheduling the Network}
 
-blah blah blah
-waffle waffle waffle
+As with most successful grid-related middleware, once you solve the problem of enabling the use of a new technology, you get a new problem: how to prevent abuse or over-subscription of resources. If any user or group can reserve a virtual circuit without constraint then there is nothing to prevent what amounts to denial-of-service attacks on competing experiments, for example. A complete network-scheduling sytem therefore needs not only to allow capacity to be reserved, but to provide a mechanism to share that capacity fairly among all users.
+
+So what constitutes a good bandwidth-sharing system? Fixed quotas are clearly too inflexible and lead to wasted resources. Instead, a good bandwidth-sharing system should have certain properties:
+
+\begin{itemize}
+\item Automatic/responsive: Circuits should be set up in a timely manner and without the need for manual intervention.
+\item Lightweight: Circuits should only be created where they are actually needed. This helps to avoid scaling or reliability issues, but also avoids creating circuits needlessly, where only a single flow is 'competing' for a given network link.
+\item Elastic: Network shares should be able to grow and shrink over time, following the timescale at which the needs of the users fluctuate. This is probably of the order of an hour, rather than days or minutes.
+\item Efficient: It should allow the network bandwidth to be fully used at all times.
+\item Fair: It should not be possible for any user to be starved of resources by other users, either on short timescales (hours) or averaged over longer timescales (days or weeks).
+\end{itemize}
+
+CPU-farms solve very similar problems with their scheduling algorithms. However, these are not directly applicable to sharing network resources. CPU cores are typically allocated in discrete quanta (1, 2, 4, 8 cores...) while network bandwidth is a continuous quantity. CPU cores are also typically interchangeable, you don't care which cores you get as long as you get your quota. Network bandwidth, on the other hand, is not interchangeable. An allocation between sites A and D can depend on the bandwidth available between sites B and C along the path, and if that bandwidth is already taken by another user then it's not available.
+
+Scheduling network resources therefore requires something different from scheduling CPUs, and candidate solutions can be found in the field of auction-theory.
