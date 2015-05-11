@@ -1,12 +1,12 @@
 \section{The Progressive Second Price Auction}
 
-A 'classic' second-price auction is one in which a single, indivisible item is offered for sale. The winner is the bidder who bids the highest amount for the item, but the price they pay is not the price they bid, it's the price bid by the second-highest bidder.
+A 'classic' second price auction is one in which a single, indivisible item is offered for sale. The winner is the bidder who bids the highest amount for the item, but the price they pay is not the price they bid, it's the price bid by the second-highest bidder.
 
-This sounds like a strange concept, since it might not yield maximal profit, but is actually how many auctions work. For example, the typical English auction, in which bidders call out progressively higher bids is a second-price auction. Two bidders will bid against each other, each raising the price in small increments until eventually one drops out. The other then wins the auction, but the price they pay has been determined by the bidder who withdrew from the bidding, not by their own evaluation of the item being sold.
+This sounds like a strange concept, since it might not yield maximal profit, but it's actually how many auctions work. For example, the typical English auction, in which bidders call out progressively higher bids, is a second price auction. Two bidders will bid against each other, each raising the price in small increments until eventually one drops out. The other then wins the auction, but the price they pay has been determined by the bidder who withdrew from the bidding, not by their own evaluation of the item being sold.
 
-Second-price auctions have the very desirable property that the optimal strategy for any bidder is to bid their true estimation of the value of the item being sold. This makes them the mechanism of choice for allocating resources in many social or market situations, where maximising profit is not the prime consideration.\footnote{While the English auction may not maximise profit for {\it rational} bidders, people get carried away by the moment, and bid far beyond their true valuation. Human psychology plays a large part in designing real-world auctions!}
+Second price auctions have the very desirable property that the optimal strategy for any bidder is to bid their true estimation of the value of the item being sold. This makes them the mechanism of choice for allocating resources in many social or market situations, where maximising profit is not the prime consideration.\footnote{While the English auction may not maximise profit for {\it rational} bidders, people often get carried away by the moment, and bid beyond their true valuation. Human psychology plays a large part in designing real-world auctions!}
 
-The Progressive Second Price Auction (PSP auction)\cite{PSP} is specifically designed for allocating network bandwidth, and can form the core of a system that satisfies the requirements outlined above. The auction proceeds as follows:
+The Progressive Second Price Auction (PSP)\cite{PSP} is an extension of the second price auction for single goods, specifically designed for allocating continuously divisible goods such as network bandwidth. This makes it suitable to form the core of a system that satisfies the requirements outlined earlier. The auction proceeds as follows:
 
 \begin{enumerate}
 \item[1)] The network offers a quantity {\bf Q} of bandwidth on a given network link.
@@ -20,7 +20,7 @@ The Progressive Second Price Auction (PSP auction)\cite{PSP} is specifically des
 
 As shown in \cite{PSP}, convergence of the auction is guaranteed if players are rational. Rationality means, in essence, that they are willing to pay a higher unit-price to increase a small allocation than to increase a large one. In other words, the more they have, the less they are willing to pay to get even more. This is simply the market law of 'diminishing marginal returns'.
 
-The PSP algorithm calculates allocations first, then the total cost per bidder. The allocations are calculated as follows:
+The PSP algorithm itself calculates allocations first, then the total cost per bidder. The allocations are calculated as follows:
 
 \begin{enumerate}
 \item[1)] Bidders are ranked in decreasing order of the unit-price they have bid.
@@ -37,7 +37,7 @@ This process is illustrated in figure~\ref{fig:allocation}
  \label{fig:allocation}
 \end{figure}
 
-The cost charged to a bidder is not the product of their allocation and the unit-price they bid. Instead, it's based on the 'exclusion compensation' principle. The fact that a given bidder {\it i} exists may mean that other bidders are not granted the same allocation they would have if bidder {\it i} were not participating. Bidder {\it i} therefore pays for the amount by which they inconvenience those other bidders.
+The cost charged to a bidder is based on the 'exclusion compensation' principle, which extends the second-price principle. The fact that a given bidder {\it i} exists may mean that other bidders are not granted the same allocation they would have if bidder {\it i} were not participating. Bidder {\it i} therefore pays for the amount by which they inconvenience those other bidders. I.e. for all bidders other than {\it i} who receive an allocation when {\it i} doesn't participate, the change in their allocation with bidder {\it i} participating is multiplied by the unit-price they were willing to pay, and the sum is the cost charged to bidder {\it i}.
 
 Figure~\ref{fig:cost} illustrates this.
 
