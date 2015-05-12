@@ -8,3 +8,5 @@ The PSP as described works well for single network links, with a single divisibl
        \caption{An approximate schematic of the LHCONE network links, showing the complexity of the LHCONE layout.}
  \label{fig:lhcone}
 \end{figure}
+
+Fortunately, the PSP extends naturally to multiple links, where different bidders are interested in different network paths of the network. A full analysis is shown in \cite{PSP-multi}. The PSP properties are maintained by holding multiple independent auctions for each network link. Bidders have a global budget each, which again can vary from bidder to bidder, from which they bid on each of the links that they are interested in in parallel. The optimal strategy for a bidder is to bid for the same bandwidth on each link-segment of the network path they are interested in, varying the price they bid at each segment in accordance with the competition for that link. Convergence to an \textepsilon-Nash equilibrium is still guaranteed for rational bidders, making the PSP a viable candidate for addressing the problem of sharing bandwidth at LHCONE.

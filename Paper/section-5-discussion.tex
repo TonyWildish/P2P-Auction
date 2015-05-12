@@ -1,0 +1,18 @@
+\section{Discussion}
+
+We have seen that the PSP auction can be used to calculate the allocation of network bandwidth shares in a multi-link network in a way that satisfies the requirements for LHCONE. This is clearly superior to having management-level meetings where people negotiate network shares for the next quarter, for example, but there remain a number of open questions.
+
+The most important question is how to allocate budgets. In a true market setting the budgets are decided by the bidders themselves, the auction is then used to decide on the shares. In a setting such as LHCONE, where experiments or users are not paying with real money for the bandwidth they use, setting budgets becomes more problematic. Essentially, the budget has to represent something of real value to the bidder, so they consider it worth using rationally.
+
+In the case of a single auction, for instance, if the budget is simply some form of fake money which has no value elsewhere, there is no incentive for the bidders to not spend their entire budget. This will lead to bidders bidding for more bandwidth than they actually need, with a consequent waste of resources if the bandwidth goes unused. In the worst case, a bidder who has no need of bandwidth might bid on links that are valuable to a rival, essentially using their fake budget to launch a denial of service attack.
+
+A related problem is that of multiple auctions, to handle renegotiation of allocations when a network-users' requirements change. Technically, there's no reason not to re-run the PSP auction whenever requirements change, or on some fixed schedule such as every hour. However, each auction will cost the successful bidders some of their fake budget, eventually leading to budget-depletion. This means budgets need to be replenished on some regular timescale. 
+
+Multiple auctions bring two considerations, 
+
+
+- budget allocation
+
+- repeat auction
+
+- representation of LHCONE
