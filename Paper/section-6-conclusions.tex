@@ -1,13 +1,13 @@
 \section{Conclusions}
 
-blah blah blah
-waffle waffle waffle
+Market mechanisms, such as the auctions, offer a convenient way of allocating limited resources to users with different and time-dependent needs. A well-designed auction will have desirable properties such as rapid convergence and a best-strategy of truthful bidding for rational bidders.
 
+The PSP in particular is suitable for sharing network bandwidth on non-trivial network topologies without the need for fixed quotas or negotiations between network providers and network users. Providers simply state their offer, and users then negotiate, by participating in the auction, to decide their shares among themselves. When the auction concludes the network provider has a clear statement of the current state of the users needs across the entire system.
 
-- budget allocation, real value for fake money, penalize under-use
+The key to making auctions work is that the monetary unit must have real value to the bidders in order to preserve rational behaviour. A real market situation clearly satisfies that demand, but an environment like LHCONE does not. Other ways must therefore be found to manage budgets and budget allocations in order to preserve the desirable properties of the auction.
 
-- repeat auction
+The situation is further complicated by the need for repeated auctions to track the changing needs for bandwidth. Fake-money budgets need to be replenished by some suitable algorithm, perhaps inspired by quota-management mechanisms for shared CPU farms. Repeat auctions can also lead to learned strategies, which further complicates the picture.
 
-- representation of LHCONE
+Finally, the question of how the network is presented for auction needs consideration, especially in an environment where there may be casual or minor users whose needs do not justify the use of circuits and the allocation of budgets.
 
-- non-participants
+The two main questions can then be summarised as how to manage budgets and how to present the network for auction. When solved, they can be used with the PSP auction to provide a lightweight, responsive, fair and efficient tool for calculating the needs of the network users at any time. Network providers can then use this information as the basis of a system for providing schedulable use of the network for the data-management systems of present and future experiments.

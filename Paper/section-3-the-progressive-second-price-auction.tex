@@ -1,4 +1,4 @@
-\section{The Progressive Second Price Auction}
+\section{Second Price Auctions}
 
 A 'classic' second price auction is one in which a single, indivisible item is offered for sale. The winner is the bidder who bids the highest amount for the item, but the price they pay is not the price they bid, it's the price bid by the second-highest bidder.
 
@@ -6,6 +6,7 @@ This sounds like a strange concept, since it might not yield maximal profit, but
 
 Second price auctions have the very desirable property that they converge on a Nash equilibrium, meaning that no single bidder can improve their 'utility' by changing their bid. They also have the property that the optimal strategy for any bidder is to bid their true estimation of the value of the item being sold. This makes them the mechanism of choice for allocating resources in many social or market situations, where maximising profit is not the prime consideration.\footnote{While the English auction may not maximise profit for {\it rational} bidders, people often get carried away by the moment, and bid beyond their true valuation. Human psychology plays a large part in designing real-world auctions!}, rather the goal is to achieve a socially-acceptable distribution of resources.
 
+\section{The Progressive Second Price Auction}
 The Progressive Second Price Auction (PSP)\cite{PSP} is an extension of the second price auction for single goods, specifically designed for allocating continuously divisible goods such as network bandwidth. This makes it suitable to form the core of a system that satisfies the requirements outlined earlier. The auction proceeds as follows:
 
 \begin{enumerate}
@@ -28,7 +29,7 @@ The PSP algorithm itself calculates allocations first, then the total cost per b
 \item[3)] If there is any remaining bandwidth, step 2 is repeated for the next-highest bidder.
 \end{enumerate}
 
-This process is illustrated in figure~\ref{fig:allocation}
+This process is illustrated in figure~\ref{fig:allocation}.
 
 \begin{figure}[h]
  \centering
